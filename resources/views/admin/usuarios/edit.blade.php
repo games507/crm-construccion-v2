@@ -3,7 +3,8 @@
 
 @section('content')
 @php
-  $roleSel = $roleSel ?? ($user->roles->first()?->name ?? '');
+  $roleSel = (string) ($roleSel ?? ($user->roles->first()?->name ?? ''));
+  $roleCurrent = (string) old('role', $roleSel);
 
   $iconBack = '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
     fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
@@ -37,20 +38,23 @@
     <path stroke-linecap="round" stroke-linejoin="round"
       d="M6.75 10.5h10.5A2.25 2.25 0 0 1 19.5 12.75v6A2.25 2.25 0 0 1 17.25 21H6.75A2.25 2.25 0 0 1 4.5 18.75v-6A2.25 2.25 0 0 1 6.75 10.5Z"/>
   </svg>';
+
+  $activoVal = (int) old('activo', (int)($user->activo ?? 1));
+
+  $canAssignRoles = (bool) ($canAssignRoles ?? false);
+  $roles = $roles ?? collect([]);
+  $empresas = $empresas ?? collect([]);
+  $isSuperAdmin = (bool) ($isSuperAdmin ?? false);
 @endphp
 
 <div class="max-w-4xl mx-auto space-y-4">
 
-  {{-- Header --}}
   <div class="flex flex-wrap items-start justify-between gap-3">
     <div>
       <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Editar Usuario</h1>
-      <p class="text-sm text-slate-500 mt-1">
-        Actualiza datos, empresa y rol. (Contraseña opcional)
-      </p>
+      <p class="text-sm text-slate-500 mt-1">Actualiza datos, empresa y rol. (Contraseña opcional)</p>
     </div>
 
-    {{-- ✅ [CAMBIO 1] Botón volver estilo Krayin (sin btn/btn-outline) --}}
     <a href="{{ route('admin.usuarios') }}"
        class="inline-flex items-center gap-2 rounded-xl px-4 h-11 text-sm font-semibold
               bg-white border border-slate-900/10 hover:border-slate-900/20 shadow-sm">
@@ -59,21 +63,17 @@
     </a>
   </div>
 
-  {{-- Errors --}}
   @if ($errors->any())
-    {{-- ✅ [CAMBIO 2] Alert component --}}
     <x-ui.alert type="err">
       ❌ {{ $errors->first() }}
     </x-ui.alert>
   @endif
 
-  {{-- Form --}}
   <x-ui.card>
     <form method="POST" action="{{ route('admin.usuarios.update',$user) }}" class="space-y-5">
       @csrf
       @method('PUT')
 
-      {{-- ✅ [CAMBIO 3] Grid Tailwind (sin col-6 / col-12) --}}
       <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
 
         <div class="md:col-span-6">
@@ -99,14 +99,12 @@
           />
         </div>
 
-        {{-- Empresa (solo SuperAdmin) --}}
-        @if(!empty($isSuperAdmin))
+        @if($isSuperAdmin)
           <div class="md:col-span-6">
-            {{-- ✅ [CAMBIO 4] Select component (sin select-wrap) --}}
             <x-ui.select name="empresa_id" label="Empresa">
               <option value="">— Sin empresa —</option>
               @foreach($empresas as $e)
-                <option value="{{ $e->id }}" @selected(old('empresa_id',$user->empresa_id)==$e->id)>
+                <option value="{{ $e->id }}" @selected((string)old('empresa_id',$user->empresa_id)===(string)$e->id)>
                   {{ $e->nombre }}
                 </option>
               @endforeach
@@ -114,28 +112,44 @@
           </div>
         @endif
 
+        {{-- ✅ ROL (select normal, sin @disabled y sin x-ui.select para evitar el error) --}}
         <div class="md:col-span-6">
-          <x-ui.select name="role" label="Rol">
+          <label class="text-xs font-semibold text-slate-500">Rol</label>
+
+          <select
+            name="role"
+            class="mt-2 w-full h-11 rounded-xl border border-slate-900/10 px-3
+                   focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none
+                   {{ $canAssignRoles ? '' : 'bg-slate-100 text-slate-500 cursor-not-allowed' }}"
+            {{ $canAssignRoles ? '' : 'disabled' }}
+          >
             <option value="">— Sin rol —</option>
             @foreach($roles as $r)
-              <option value="{{ $r->name }}" @selected(old('role',$roleSel)===$r->name)>
-                {{ $r->name }}
-              </option>
+              <option value="{{ $r->name }}" @selected($roleCurrent === (string)$r->name)>{{ $r->name }}</option>
             @endforeach
-          </x-ui.select>
+          </select>
+
+          @if(!$canAssignRoles)
+            <p class="text-xs text-slate-500 mt-2">No tienes permiso para cambiar el rol.</p>
+            {{-- disabled no envía, por eso mandamos el valor actual --}}
+            <input type="hidden" name="role" value="{{ $roleCurrent }}">
+          @endif
         </div>
 
         <div class="md:col-span-6">
-          {{-- ✅ [CAMBIO 5] Checkbox bonito (sin inline style) --}}
-          <label class="flex items-center gap-3 rounded-xl border border-slate-900/10 bg-white px-4 h-11 cursor-pointer hover:bg-slate-50">
-            <input
-              type="checkbox"
-              name="activo"
-              value="1"
-              class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-200"
-              {{ old('activo',$user->activo) ? 'checked' : '' }}
-            >
-            <span class="text-sm font-extrabold text-slate-800">Activo</span>
+          <label class="flex items-center justify-between gap-3 rounded-2xl border border-slate-900/10 bg-slate-50 px-4 py-3">
+            <div>
+              <div class="text-sm font-extrabold text-slate-900">Activo</div>
+              <div class="text-xs font-semibold text-slate-500">
+                Si lo desactivas, el usuario no podrá usarse/verse según tus reglas.
+              </div>
+            </div>
+
+            <span class="relative inline-flex items-center">
+              <input type="checkbox" name="activo" value="1" class="peer sr-only" {{ $activoVal ? 'checked' : '' }}>
+              <span class="h-7 w-12 rounded-full bg-slate-300 peer-checked:bg-emerald-500 transition"></span>
+              <span class="absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5"></span>
+            </span>
           </label>
         </div>
 
@@ -147,14 +161,11 @@
             placeholder="Dejar vacío para no cambiar"
             :icon="$iconLock"
           />
-          <p class="text-xs text-slate-500 mt-2">
-            Si dejas este campo vacío, la contraseña no se modificará.
-          </p>
+          <p class="text-xs text-slate-500 mt-2">Si dejas este campo vacío, la contraseña no se modificará.</p>
         </div>
 
       </div>
 
-      {{-- ✅ [CAMBIO 6] Footer acciones consistente --}}
       <div class="flex items-center justify-end gap-2 pt-2">
         <a href="{{ route('admin.usuarios') }}"
            class="inline-flex items-center gap-2 rounded-xl px-4 h-11 text-sm font-semibold
