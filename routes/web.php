@@ -59,7 +59,7 @@ Route::middleware(['auth'])->group(function () {
     // Dashboard
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
-    // ✅ API Existencias (React Island) - protegido
+    // API Existencias (React Island) - protegido
     Route::get('/inventario/existencias/api', [InventarioExistenciasController::class, 'api'])
         ->middleware('permission:inventario.ver')
         ->name('inventario.existencias.api');
@@ -249,7 +249,7 @@ Route::middleware(['auth'])->group(function () {
                 ->middleware('permission:almacenes.eliminar')
                 ->name('almacenes.destroy');
 
-            // ✅ Desactivar almacén (NO rompe FK)
+            // Desactivar almacén (NO rompe FK)
             Route::post('almacenes/{almacen}/deactivate', [AlmacenController::class, 'deactivate'])
                 ->middleware('permission:almacenes.eliminar')
                 ->name('almacenes.deactivate');

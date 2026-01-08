@@ -12,16 +12,51 @@ use Illuminate\Support\Facades\DB;
 
 class MovimientosController extends Controller
 {
-    public function index()
+    public function index(Request $r)
     {
         $empresaId = (int) (auth()->user()->empresa_id ?? 0);
         if ($empresaId <= 0) abort(403, 'Tu usuario no tiene empresa asignada.');
 
-        $movs = InvMovimiento::with(['material','almacenOrigen','almacenDestino'])
-            ->where('empresa_id', $empresaId)
-            ->orderByDesc('fecha')->orderByDesc('id')
-            ->limit(200)
-            ->get();
+        $q = trim((string) $r->query('q', ''));
+
+        $query = InvMovimiento::with(['material','almacenOrigen','almacenDestino'])
+            ->where('empresa_id', $empresaId);
+
+        // ✅ BUSCADOR (referencia, tipo, material y almacenes)
+        if ($q !== '') {
+            $query->where(function ($w) use ($q) {
+
+                // referencia / tipo
+                $w->where('referencia', 'like', "%{$q}%")
+                  ->orWhere('tipo', 'like', "%{$q}%");
+
+                // material: sku/codigo/descripcion
+                $w->orWhereHas('material', function ($m) use ($q) {
+                    $m->where('sku', 'like', "%{$q}%")
+                      ->orWhere('codigo', 'like', "%{$q}%")
+                      ->orWhere('descripcion', 'like', "%{$q}%");
+                });
+
+                // almacén origen: codigo/nombre
+                $w->orWhereHas('almacenOrigen', function ($a) use ($q) {
+                    $a->where('codigo', 'like', "%{$q}%")
+                      ->orWhere('nombre', 'like', "%{$q}%");
+                });
+
+                // almacén destino: codigo/nombre
+                $w->orWhereHas('almacenDestino', function ($a) use ($q) {
+                    $a->where('codigo', 'like', "%{$q}%")
+                      ->orWhere('nombre', 'like', "%{$q}%");
+                });
+            });
+        }
+
+        // ✅ paginación profesional
+        $movs = $query
+            ->orderByDesc('fecha')
+            ->orderByDesc('id')
+            ->paginate(15)
+            ->withQueryString();
 
         return view('inventario.movimientos.index', compact('movs'));
     }

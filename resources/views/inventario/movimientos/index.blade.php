@@ -19,6 +19,8 @@
     if($tipo==='ajuste')   return 'bg-amber-100 text-amber-800';
     return 'bg-slate-100 text-slate-800';
   };
+
+  $q = (string) request('q', '');
 @endphp
 
 <div class="max-w-7xl mx-auto">
@@ -33,7 +35,41 @@
       <p class="text-sm text-slate-500 mt-1">Entradas, salidas, traslados y ajustes de inventario.</p>
     </div>
 
-    <div class="flex gap-2 flex-wrap">
+    <div class="flex items-center gap-2 flex-wrap">
+
+      {{-- ✅ Buscador + Botón Buscar (elegante) --}}
+      <form method="GET" action="{{ route('inventario.movimientos') }}" class="flex items-center gap-2">
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+            {!! $icon('search') !!}
+          </span>
+
+          <input
+            type="text"
+            name="q"
+            value="{{ $q }}"
+            placeholder="Buscar por material, referencia o tipo..."
+            class="h-10 w-72 max-w-[75vw] rounded-xl border border-slate-300 bg-white pl-10 pr-3 text-sm
+                   focus:border-blue-500 focus:ring-blue-500"
+          >
+        </div>
+
+        <button type="submit"
+          class="inline-flex items-center gap-2 h-10 rounded-xl px-4 text-sm font-semibold
+                 bg-slate-900 text-white hover:bg-slate-950 shadow-sm">
+          {!! $icon('search') !!}
+          Buscar
+        </button>
+
+        @if($q !== '')
+          <a href="{{ route('inventario.movimientos') }}"
+             class="inline-flex items-center h-10 rounded-xl px-3 text-sm font-semibold
+                    border border-slate-900/10 bg-white text-slate-700 hover:bg-slate-50">
+            Limpiar
+          </a>
+        @endif
+      </form>
+
       @can('inventario.crear')
         <a href="{{ route('inventario.movimientos.create') }}"
            class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold
@@ -151,7 +187,7 @@
   </div>
 
   <div class="mt-4 text-xs text-slate-500">
-    Mostrando los últimos {{ count($movs) }} movimientos (máximo 200).
+    Mostrando los últimos {{ is_countable($movs) ? count($movs) : 0 }} movimientos.
   </div>
 
 </div>
