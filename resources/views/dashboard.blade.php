@@ -3,24 +3,60 @@
 
 @section('content')
 @php
+  use App\Support\EmpresaScope;
+  use App\Models\Empresa;
+
   $k = $kpis ?? [];
 
-  // Empresa (para mostrar en el header)
-  $empresaNombre = (string) (auth()->user()?->empresa?->nombre ?? auth()->user()?->empresa?->razon_social ?? '—');
+  $user = auth()->user();
 
-  // Total REAL de movimientos (si el controller lo manda, usamos ese)
-  $totalMovs = (int)($k['movimientos_total'] ?? 0);
+  // =========================
+  // Detectar SuperAdmin
+  // =========================
+  $isSuperAdmin = false;
+  if ($user) {
+    if (method_exists($user, 'hasRole')) {
+      $isSuperAdmin = $user->hasRole('SuperAdmin');
+    } elseif (isset($user->is_superadmin)) {
+      $isSuperAdmin = (bool) $user->is_superadmin;
+    }
+  }
 
-  // Por si NO lo mandan (fallback): contar lo que venga en $ultimosMovs (ojo: puede ser limitado)
+  // =========================
+  // Empresa efectiva (para header)
+  // - SuperAdmin => empresa del contexto (session)
+  // - Admin Empresa => su empresa_id
+  // =========================
+  $empresaId = $isSuperAdmin ? EmpresaScope::getId() : ($user->empresa_id ?? null);
+
+  $empresaObj = null;
+  if ($empresaId) {
+    // ✅ NO pedir razon_social (no existe en tu tabla)
+    $empresaObj = Empresa::select('id','nombre')->find($empresaId);
+  }
+
+  $empresaNombre = (string) (
+    $empresaObj?->nombre
+    ?? ($user?->empresa?->nombre ?? '—')
+  );
+
+  // =========================
+  // KPIs / Totales
+  // =========================
+  $totalMovs = (int) ($k['movimientos_total'] ?? 0);
+
+  // Fallback si el controller no manda total real (ojo: puede venir limitado)
   if ($totalMovs <= 0) {
     $totalMovs = isset($ultimosMovs) ? (is_countable($ultimosMovs) ? count($ultimosMovs) : 0) : 0;
   }
 
-  // KPI Proyectos (debe venir del controller)
-  $proyectosCount = (int)($k['proyectos'] ?? 0);
+  $proyectosCount = (int) ($k['proyectos'] ?? 0);
 
-  // Valor inventario movido al panel Top materiales
-  $valorInventario = (float)($k['valor_inventario'] ?? 0);
+  // Valor inventario (para panel top materiales)
+  $valorInventario = (float) ($k['valor_inventario'] ?? 0);
+
+  // Colecciones seguras
+  $topMateriales = $topMateriales ?? collect();
 @endphp
 
 <style>
@@ -144,13 +180,17 @@
       <h2 class="dash-title">Tu Tablero</h2>
       <div class="dash-sub">
         <strong>{{ $empresaNombre }}</strong>
+        @if($isSuperAdmin && !EmpresaScope::has())
+          <div class="muted" style="margin-top:6px;">
+            Estás como <b>SuperAdmin</b> sin contexto de empresa (selecciona una empresa en el sidebar).
+          </div>
+        @endif
       </div>
     </div>
 
-    {{-- MENÚ CON ICONOS (sin botón Nuevo) --}}
+    {{-- MENÚ CON ICONOS --}}
     <div class="dash-actions">
 
-      {{-- Material --}}
       <a class="a-btn soft m1" href="{{ route('inventario.materiales') }}" title="Materiales">
         <span class="a-ico">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -162,7 +202,6 @@
         Material
       </a>
 
-      {{-- Almacén --}}
       <a class="a-btn soft m2" href="{{ route('inventario.almacenes') }}" title="Almacenes">
         <span class="a-ico">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -174,7 +213,6 @@
         Almacén
       </a>
 
-      {{-- Proyecto (ruta real: admin.proyectos) --}}
       <a class="a-btn soft m3" href="{{ route('admin.proyectos') }}" title="Proyectos">
         <span class="a-ico">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -184,7 +222,6 @@
         Proyecto
       </a>
 
-      {{-- Kardex --}}
       <a class="a-btn soft m4" href="{{ route('inventario.kardex') }}" title="Kardex">
         <span class="a-ico">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -260,7 +297,7 @@
           </div>
           <div><div class="tile-name">Proyectos</div><div class="tile-meta">Registrados</div></div>
         </div>
-        <div class="tile-val">{{ number_format($proyectosCount,0) }}</div>
+        <div class="tile-val">{{ number_format((int)($k['proyectos'] ?? 0), 0) }}</div>
       </div>
     </div>
 

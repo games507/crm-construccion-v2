@@ -6,121 +6,146 @@
   $q = $q ?? request('q','');
 @endphp
 
-<div class="card" style="max-width:1100px;margin:0 auto;">
+<div class="max-w-6xl mx-auto space-y-4">
 
-  <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start;">
+  {{-- Header --}}
+  <div class="flex flex-wrap items-start justify-between gap-3">
     <div>
-      <h2 style="margin:0 0 6px 0;">Empresas</h2>
-      <div style="color:#64748b;font-size:13px;">Multiempresa: crea, edita y administra compañías.</div>
+      <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Empresas</h1>
+      <p class="text-sm text-slate-500 mt-1">Multiempresa: crea, edita y administra compañías.</p>
     </div>
 
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-      <form method="GET" action="{{ route('admin.empresas') }}" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-        <div class="input-wrap" style="min-width:260px;">
-          <div class="input-ico">Q</div>
-          <input class="input" name="q" value="{{ $q }}" placeholder="Buscar por nombre, ruc o correo...">
+    <div class="flex flex-wrap items-center gap-2">
+      <form method="GET" action="{{ route('admin.empresas') }}" class="flex items-center gap-2 flex-wrap">
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-black">Q</span>
+          <input
+            name="q"
+            value="{{ $q }}"
+            placeholder="Buscar por nombre, ruc o correo..."
+            class="h-11 w-[280px] rounded-xl border border-slate-900/10 bg-white pl-10 pr-3 text-sm font-semibold
+                   shadow-sm focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300"
+          >
         </div>
-        <button class="btn btn-outline" type="submit">Buscar</button>
+        <button type="submit"
+          class="inline-flex items-center justify-center rounded-xl px-4 h-11 text-sm font-semibold
+                 bg-white border border-slate-900/10 hover:border-slate-900/20 shadow-sm">
+          Buscar
+        </button>
       </form>
 
-      @can('empresas.crear')
-        <a class="btn" href="{{ route('admin.empresas.create') }}">+ Nueva Empresa</a>
-      @endcan
+      {{-- Botón Nueva Empresa (SIN @can, porque este módulo es solo SuperAdmin) --}}
+      <a href="{{ route('admin.empresas.create') }}"
+         class="inline-flex items-center justify-center rounded-xl px-4 h-11 text-sm font-semibold
+                bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
+        + Nueva Empresa
+      </a>
     </div>
   </div>
 
+  {{-- Alerts --}}
   @if(session('ok'))
-    <div class="alert" style="margin-top:14px;border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.06);color:#14532d;">
+    <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-900 font-semibold">
       {{ session('ok') }}
     </div>
   @endif
 
   @if ($errors->any())
-    <div class="alert" style="margin-top:14px;">
+    <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-900 font-semibold">
       {{ $errors->first() }}
     </div>
   @endif
 
-  <div style="margin-top:14px;overflow:auto;border:1px solid rgba(15,23,42,.08);border-radius:14px;">
-    <table width="100%" cellpadding="10" style="border-collapse:collapse;min-width:980px;">
-      <thead>
-        <tr style="background:rgba(2,6,23,.03);text-align:left;">
-          <th style="padding:12px;border-bottom:1px solid rgba(15,23,42,.08);">Empresa</th>
-          <th style="padding:12px;border-bottom:1px solid rgba(15,23,42,.08);">RUC</th>
-          <th style="padding:12px;border-bottom:1px solid rgba(15,23,42,.08);">Contacto</th>
-          <th style="padding:12px;border-bottom:1px solid rgba(15,23,42,.08);">Estado</th>
-          <th style="padding:12px;border-bottom:1px solid rgba(15,23,42,.08);width:220px;">Acciones</th>
-        </tr>
-      </thead>
+  {{-- Table --}}
+  <div class="overflow-hidden rounded-2xl border border-slate-900/10 bg-white shadow-sm">
+    <div class="overflow-auto">
+      <table class="min-w-[980px] w-full border-collapse">
+        <thead class="bg-slate-50">
+          <tr class="text-left text-xs font-black uppercase tracking-wide text-slate-600">
+            <th class="px-4 py-3 border-b border-slate-900/10">Empresa</th>
+            <th class="px-4 py-3 border-b border-slate-900/10">RUC</th>
+            <th class="px-4 py-3 border-b border-slate-900/10">Contacto</th>
+            <th class="px-4 py-3 border-b border-slate-900/10">Estado</th>
+            <th class="px-4 py-3 border-b border-slate-900/10 w-[240px]">Acciones</th>
+          </tr>
+        </thead>
 
-      <tbody>
-        @forelse($empresas as $e)
-          <tr style="border-bottom:1px solid rgba(15,23,42,.06);">
-            <td style="padding:12px;">
-              <div style="font-weight:900;display:flex;align-items:center;gap:10px;">
-                <div style="width:34px;height:34px;border-radius:12px;background:rgba(37,99,235,.12);display:grid;place-items:center;font-weight:900;color:#1d4ed8;">
-                  {{ strtoupper(substr($e->nombre,0,1)) }}
+        <tbody class="divide-y divide-slate-900/5">
+          @forelse($empresas as $e)
+            <tr class="hover:bg-slate-50/60">
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-3">
+                  <div class="h-9 w-9 rounded-2xl bg-indigo-50 text-indigo-700 grid place-items-center font-black">
+                    {{ strtoupper(substr($e->nombre,0,1)) }}
+                  </div>
+                  <div class="min-w-0">
+                    <div class="font-extrabold text-slate-900 truncate">{{ $e->nombre }}</div>
+                    <div class="text-xs font-semibold text-slate-500">ID: {{ $e->id }}</div>
+                  </div>
                 </div>
-                <div>
-                  <div style="font-weight:900;">{{ $e->nombre }}</div>
-                  <div style="color:#64748b;font-size:12px;">ID: {{ $e->id }}</div>
-                </div>
-              </div>
-            </td>
+              </td>
 
-            <td style="padding:12px;">
-              <span style="font-weight:800;color:#0f172a;">{{ $e->ruc ?: '—' }}</span>
-            </td>
+              <td class="px-4 py-3">
+                <span class="font-extrabold text-slate-900">{{ $e->ruc ?: '—' }}</span>
+              </td>
 
-            <td style="padding:12px;">
-              <div style="font-weight:800;">{{ $e->email ?: '—' }}</div>
-              <div style="color:#64748b;font-size:12px;">{{ $e->telefono ?: '' }}</div>
-            </td>
+              <td class="px-4 py-3">
+                <div class="font-semibold text-slate-900">{{ $e->email ?: '—' }}</div>
+                <div class="text-xs font-semibold text-slate-500">{{ $e->telefono ?: '' }}</div>
+              </td>
 
-            <td style="padding:12px;">
-              @if((int)$e->activa === 1)
-                <span style="display:inline-flex;padding:6px 10px;border-radius:999px;font-weight:900;font-size:12px;background:rgba(34,197,94,.10);border:1px solid rgba(34,197,94,.18);color:#14532d;">
-                  ACTIVA
-                </span>
-              @else
-                <span style="display:inline-flex;padding:6px 10px;border-radius:999px;font-weight:900;font-size:12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.18);color:#991b1b;">
-                  INACTIVA
-                </span>
-              @endif
-            </td>
+              <td class="px-4 py-3">
+                @if((int)$e->activa === 1)
+                  <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-black
+                               bg-emerald-50 border border-emerald-200 text-emerald-800">
+                    ACTIVA
+                  </span>
+                @else
+                  <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-black
+                               bg-rose-50 border border-rose-200 text-rose-800">
+                    INACTIVA
+                  </span>
+                @endif
+              </td>
 
-            <td style="padding:12px;">
-              <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                @can('empresas.editar')
-                  <a class="btn btn-outline" href="{{ route('admin.empresas.edit',$e) }}">Editar</a>
-                @endcan
+              {{-- Acciones (SIN @can) --}}
+              <td class="px-4 py-3">
+                <div class="flex flex-wrap gap-2">
+                  <a href="{{ route('admin.empresas.edit',$e) }}"
+                     class="inline-flex items-center justify-center rounded-xl px-3 h-10 text-sm font-semibold
+                            bg-white border border-slate-900/10 hover:border-slate-900/20 shadow-sm">
+                    Editar
+                  </a>
 
-                @can('empresas.eliminar')
-                  <form method="POST" action="{{ route('admin.empresas.destroy',$e) }}" onsubmit="return confirm('¿Eliminar esta empresa?');">
+                  <form method="POST" action="{{ route('admin.empresas.destroy',$e) }}"
+                        onsubmit="return confirm('¿Eliminar esta empresa?');">
                     @csrf
                     @method('DELETE')
-                    <button class="btn btn-outline" type="submit" style="border-color:rgba(239,68,68,.25);color:#991b1b;">
+                    <button type="submit"
+                      class="inline-flex items-center justify-center rounded-xl px-3 h-10 text-sm font-semibold
+                             bg-white border border-rose-200 text-rose-700 hover:border-rose-300 shadow-sm">
                       Eliminar
                     </button>
                   </form>
-                @endcan
+                </div>
+              </td>
+            </tr>
+          @empty
+            <tr>
+              <td colspan="5" class="px-4 py-6 text-slate-500 font-semibold">
+                No hay empresas.
+              </td>
+            </tr>
+          @endforelse
+        </tbody>
+      </table>
+    </div>
 
-                @if(!auth()->user()->can('empresas.editar') && !auth()->user()->can('empresas.eliminar'))
-                  <span style="color:#94a3b8;">—</span>
-                @endif
-              </div>
-            </td>
-          </tr>
-        @empty
-          <tr><td colspan="5" style="padding:14px;color:#64748b;">No hay empresas.</td></tr>
-        @endforelse
-      </tbody>
-    </table>
-  </div>
-
-  <div style="margin-top:14px;">
+    {{-- Pagination --}}
     @if(method_exists($empresas,'links'))
-      {{ $empresas->links() }}
+      <div class="px-4 py-3 border-t border-slate-900/10">
+        {{ $empresas->links() }}
+      </div>
     @endif
   </div>
 

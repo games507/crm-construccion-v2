@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Empresa extends Model
 {
+    use HasFactory;
+
     protected $table = 'empresas';
 
     protected $fillable = [
@@ -16,31 +19,30 @@ class Empresa extends Model
         'telefono',
         'email',
         'direccion',
-        'logo_path',
-        'settings',
         'activa',
         'activo',
+        'logo_path',
         'admin_user_id',
     ];
 
     protected $casts = [
         'activa' => 'boolean',
         'activo' => 'boolean',
-        'settings' => 'array',
     ];
 
-    public function usuarios()
-    {
-        return $this->hasMany(User::class);
-    }
-
-    public function proyectos()
-    {
-        return $this->hasMany(Proyecto::class);
-    }
-
+    /**
+     * Usuario administrador asignado
+     */
     public function adminUser()
     {
         return $this->belongsTo(User::class, 'admin_user_id');
+    }
+
+    /**
+     * Usuarios de la empresa
+     */
+    public function users()
+    {
+        return $this->hasMany(User::class);
     }
 }

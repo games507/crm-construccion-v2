@@ -6,16 +6,38 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\InvExistencia;
 use App\Models\Almacen;
+use App\Support\EmpresaScope; // (Super Admin contexto)
 
 class InventarioController extends Controller
 {
-    public function existencias(Request $r)
+    /**
+     * PATRÓN ÚNICO PARA EMPRESA (CÓPIALO EN LOS DEMÁS)
+     *
+     * 1) Si hay contexto seleccionado (EmpresaScope::getId) -> úsalo (Super Admin)
+     * 2) Si no hay contexto -> usa empresa_id del usuario (usuario normal)
+     * 3) Si ambos son 0 -> 403 (mensaje claro)
+     */
+    private function empresaIdOrAbort(): int
     {
-        $empresaId = (int) auth()->user()->empresa_id;
+        $user = auth()->user();
+
+        $scopeEmpresaId = (int) EmpresaScope::getId();        // super admin cuando elige empresa
+        $userEmpresaId  = (int) ($user->empresa_id ?? 0);     // usuario normal
+
+        $empresaId = $scopeEmpresaId > 0 ? $scopeEmpresaId : $userEmpresaId;
 
         if ($empresaId <= 0) {
-            abort(403, 'Tu usuario no tiene empresa asignada.');
+            abort(403, 'Seleccione una empresa para continuar.');
         }
+
+        return $empresaId;
+    }
+
+    public function existencias(Request $r)
+    {
+        // Antes: (int) auth()->user()->empresa_id + abort 403
+        // Ahora: soporta Super Admin por contexto y usuario normal por empresa_id
+        $empresaId = $this->empresaIdOrAbort();
 
         $almacenId = (int) $r->get('almacen_id', 0);
         $q = trim((string) $r->get('q', ''));
@@ -23,7 +45,7 @@ class InventarioController extends Controller
         $query = InvExistencia::query()
             ->with([
                 'material:id,codigo,sku,descripcion,unidad,unidad_id',
-                'material.unidadRef:id,codigo,descripcion', // ✅ aquí
+                'material.unidadRef:id,codigo,descripcion',
                 'almacen:id,codigo,nombre',
             ])
             ->where('empresa_id', $empresaId);

@@ -13,6 +13,9 @@ use App\Http\Controllers\Inventario\MovimientosController;
 use App\Http\Controllers\Inventario\InventarioController;
 use App\Http\Controllers\Inventario\KardexController;
 
+// SUPER ADMIN
+use App\Http\Controllers\Admin\EmpresaContextController;
+
 // ADMIN
 use App\Http\Controllers\Admin\UsuariosController;
 use App\Http\Controllers\Admin\RolesController;
@@ -56,10 +59,29 @@ Route::post('/logout', [LoginController::class, 'destroy'])
 */
 Route::middleware(['auth'])->group(function () {
 
-    // Dashboard
+    /*
+    |--------------------------------------------------------------------------
+    | SUPER ADMIN - CONTEXTO DE EMPRESA
+    |--------------------------------------------------------------------------
+    */
+    Route::post('/admin/empresa-context', [EmpresaContextController::class, 'set'])
+        ->name('admin.empresa_context.set');
+
+    Route::post('/admin/empresa-context/clear', [EmpresaContextController::class, 'clear'])
+        ->name('admin.empresa_context.clear');
+
+    /*
+    |--------------------------------------------------------------------------
+    | DASHBOARD
+    |--------------------------------------------------------------------------
+    */
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
-    // API Existencias (React Island) - protegido
+    /*
+    |--------------------------------------------------------------------------
+    | API Existencias (React Island) - protegido
+    |--------------------------------------------------------------------------
+    */
     Route::get('/inventario/existencias/api', [InventarioExistenciasController::class, 'api'])
         ->middleware('permission:inventario.ver')
         ->name('inventario.existencias.api');
@@ -84,12 +106,41 @@ Route::middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | ADMIN / CONFIGURACIÓN GLOBAL (SuperAdmin / Admin del sistema)
+    | ADMIN - EMPRESAS (SOLO SUPERADMIN)
     |--------------------------------------------------------------------------
     */
     Route::prefix('admin')
         ->name('admin.')
-        ->middleware(['permission:admin.ver'])
+        ->middleware(['superadmin_only'])
+        ->group(function () {
+
+            Route::get('empresas', [EmpresasController::class, 'index'])
+                ->name('empresas');
+
+            Route::get('empresas/create', [EmpresasController::class, 'create'])
+                ->name('empresas.create');
+
+            Route::post('empresas', [EmpresasController::class, 'store'])
+                ->name('empresas.store');
+
+            Route::get('empresas/{empresa}/edit', [EmpresasController::class, 'edit'])
+                ->name('empresas.edit');
+
+            Route::put('empresas/{empresa}', [EmpresasController::class, 'update'])
+                ->name('empresas.update');
+
+            Route::delete('empresas/{empresa}', [EmpresasController::class, 'destroy'])
+                ->name('empresas.destroy');
+        });
+
+    /*
+    |--------------------------------------------------------------------------
+    | ADMIN / CONFIGURACIÓN GLOBAL (Admin del sistema o SuperAdmin)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('admin')
+        ->name('admin.')
+        ->middleware(['admin_or_superadmin'])
         ->group(function () {
 
             // USUARIOS
@@ -163,31 +214,6 @@ Route::middleware(['auth'])->group(function () {
                 ->middleware('permission:permisos.eliminar')
                 ->name('permisos.destroy');
 
-            // EMPRESAS
-            Route::get('empresas', [EmpresasController::class, 'index'])
-                ->middleware('permission:empresas.ver')
-                ->name('empresas');
-
-            Route::get('empresas/create', [EmpresasController::class, 'create'])
-                ->middleware('permission:empresas.crear')
-                ->name('empresas.create');
-
-            Route::post('empresas', [EmpresasController::class, 'store'])
-                ->middleware('permission:empresas.crear')
-                ->name('empresas.store');
-
-            Route::get('empresas/{empresa}/edit', [EmpresasController::class, 'edit'])
-                ->middleware('permission:empresas.editar')
-                ->name('empresas.edit');
-
-            Route::put('empresas/{empresa}', [EmpresasController::class, 'update'])
-                ->middleware('permission:empresas.editar')
-                ->name('empresas.update');
-
-            Route::delete('empresas/{empresa}', [EmpresasController::class, 'destroy'])
-                ->middleware('permission:empresas.eliminar')
-                ->name('empresas.destroy');
-
             // PROYECTOS
             Route::get('proyectos', [ProyectosController::class, 'index'])
                 ->middleware('permission:proyectos.ver')
@@ -224,7 +250,7 @@ Route::middleware(['auth'])->group(function () {
                 ->middleware('permission:inventario.ver')
                 ->name('existencias');
 
-            // ALMACENES (CRUD)
+            // ALMACENES
             Route::get('almacenes', [AlmacenController::class, 'index'])
                 ->middleware('permission:almacenes.ver')
                 ->name('almacenes');
@@ -249,12 +275,11 @@ Route::middleware(['auth'])->group(function () {
                 ->middleware('permission:almacenes.eliminar')
                 ->name('almacenes.destroy');
 
-            // Desactivar almacén (NO rompe FK)
             Route::post('almacenes/{almacen}/deactivate', [AlmacenController::class, 'deactivate'])
                 ->middleware('permission:almacenes.eliminar')
                 ->name('almacenes.deactivate');
 
-            // MATERIALES (CRUD)
+            // MATERIALES
             Route::get('materiales', [MaterialController::class, 'index'])
                 ->middleware('permission:materiales.ver')
                 ->name('materiales');

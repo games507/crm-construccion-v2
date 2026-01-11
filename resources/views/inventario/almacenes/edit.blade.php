@@ -13,12 +13,13 @@
     return '';
   };
 
-  // Estado actual (por si hay old() luego de validación)
+  // Estado actual (respeta old())
   $activo = (int) old('activo', (int)($almacen->activo ?? 1));
 @endphp
 
 <div class="max-w-4xl mx-auto">
 
+  {{-- Header --}}
   <div class="flex flex-wrap items-start justify-between gap-3">
     <div>
       <h1 class="text-xl font-extrabold tracking-tight">Editar Almacén</h1>
@@ -33,6 +34,7 @@
     </a>
   </div>
 
+  {{-- Alerts --}}
   @if (session('ok'))
     <div class="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-900 flex items-center gap-2">
       <span class="text-emerald-700">{!! $icon('ok') !!}</span>
@@ -61,7 +63,9 @@
     </div>
   @endif
 
+  {{-- Card --}}
   <div class="mt-5 rounded-2xl border border-slate-900/10 bg-white shadow-sm">
+    {{-- FORM PRINCIPAL (UPDATE) --}}
     <form method="POST" action="{{ route('inventario.almacenes.update',$almacen) }}" class="p-5">
       @csrf
       @method('PUT')
@@ -89,12 +93,11 @@
                  name="ubicacion" value="{{ old('ubicacion',$almacen->ubicacion) }}">
         </div>
 
-        {{-- ✅ Switch Activo (con hidden 0 para que SIEMPRE mande valor) --}}
+        {{-- Switch Activo (manda 0/1 siempre) --}}
         <div class="md:col-span-2">
           <label class="text-xs font-semibold text-slate-500 block mb-2">Estado</label>
 
-          {{-- IMPORTANTÍSIMO: cuando el switch está OFF, el checkbox no envía nada.
-               Esto garantiza que se mande 0. --}}
+          {{-- cuando OFF, manda 0 --}}
           <input type="hidden" name="activo" value="0">
 
           <label class="flex items-center justify-between gap-3 rounded-2xl border border-slate-900/10 bg-slate-50 px-4 py-3">
@@ -126,6 +129,7 @@
 
       </div>
 
+      {{-- Acciones --}}
       <div class="mt-6 flex flex-wrap items-center justify-between gap-2">
         <a class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold
                   bg-white border border-slate-900/10 hover:border-slate-900/20 shadow-sm"
@@ -133,32 +137,31 @@
           {!! $icon('x') !!} Cancelar
         </a>
 
-        <div class="flex gap-2 flex-wrap">
-
-          @can('almacenes.eliminar')
-            <form method="POST" action="{{ route('inventario.almacenes.destroy',$almacen) }}"
-                  onsubmit="return confirm('¿Deseas eliminar este almacén? Si tiene inventario, se marcará como INACTIVO.');">
-              @csrf
-              @method('DELETE')
-              <button type="submit"
-                      class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold
-                             bg-white border border-red-200 text-red-700 hover:border-red-300 hover:bg-red-50 shadow-sm">
-                {!! $icon('trash') !!} Eliminar
-              </button>
-            </form>
-          @endcan
-
-          <button class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold
-                         bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-                  type="submit">
-            {!! $icon('save') !!} Guardar cambios
-          </button>
-
-        </div>
+        <button class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold
+                       bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+                type="submit">
+          {!! $icon('save') !!} Guardar cambios
+        </button>
       </div>
 
     </form>
   </div>
+
+  {{-- FORM ELIMINAR (AFUERA DEL FORM PRINCIPAL) --}}
+  @can('almacenes.eliminar')
+    <div class="mt-3 flex justify-end">
+      <form method="POST" action="{{ route('inventario.almacenes.destroy',$almacen) }}"
+            onsubmit="return confirm('¿Deseas eliminar este almacén? Si tiene inventario, se marcará como INACTIVO.');">
+        @csrf
+        @method('DELETE')
+        <button type="submit"
+                class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold
+                       bg-white border border-red-200 text-red-700 hover:border-red-300 hover:bg-red-50 shadow-sm">
+          {!! $icon('trash') !!} Eliminar
+        </button>
+      </form>
+    </div>
+  @endcan
 
 </div>
 @endsection

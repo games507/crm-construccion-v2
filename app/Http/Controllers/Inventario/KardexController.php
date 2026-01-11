@@ -8,25 +8,41 @@ use App\Models\InvMovimiento;
 use App\Models\Material;
 use Illuminate\Http\Request;
 
+// ✅ Import del scope (super admin selecciona empresa)
+use App\Support\EmpresaScope;
+
 class KardexController extends Controller
 {
+    /**
+     * ✅ EMPRESA ACTUAL (PATRÓN PARA COPIAR)
+     * - SuperAdmin: EmpresaScope::getId() (sesión)
+     * - Usuario normal: auth()->user()->empresa_id
+     * - Si no hay empresa -> abort 403
+     */
+    private function empresaIdOrAbort(): int
+    {
+        $user = auth()->user();
+
+        $scopeEmpresaId = (int) EmpresaScope::getId();          // super admin (sesión)
+        $userEmpresaId  = (int) ($user->empresa_id ?? 0);       // usuario normal
+
+        $empresaId = $scopeEmpresaId > 0 ? $scopeEmpresaId : $userEmpresaId;
+
+        if ($empresaId <= 0) {
+            abort(403, 'Seleccione una empresa para continuar.');
+        }
+
+        return $empresaId;
+    }
+
     /**
      * Muestra formulario (material + almacén).
      */
     public function index(Request $req)
     {
-        $empresaId = (int) auth()->user()->empresa_id;
-
-        if ($empresaId <= 0) {
-            return view('inventario.kardex.index', [
-                'materiales'  => collect(),
-                'almacenes'   => collect(),
-                'materialSel' => $req->query('material_id'),
-                'almacenSel'  => $req->query('almacen_id'),
-                'rows'        => [],
-                'totales'     => null,
-            ])->withErrors(['empresa_id' => 'Tu usuario no tiene empresa asignada.']);
-        }
+        // ✅ FIX: ya NO usamos solo auth()->user()->empresa_id
+        // porque SuperAdmin no tiene empresa asignada (0) y trabaja con EmpresaScope.
+        $empresaId = $this->empresaIdOrAbort();
 
         $materiales = Material::where('empresa_id', $empresaId)
             ->orderBy('descripcion')
@@ -51,30 +67,34 @@ class KardexController extends Controller
      */
     public function kardexVer(Request $req)
     {
-        $empresaId = (int) auth()->user()->empresa_id;
+        // ✅ FIX: empresa por scope/usuario
+        $empresaId = $this->empresaIdOrAbort();
 
-        if ($empresaId <= 0) {
-            return redirect()->route('inventario.kardex')
-                ->withErrors(['empresa_id' => 'Tu usuario no tiene empresa asignada.']);
-        }
-
-        $req->validate([
-            'material_id' => ['required','integer'],
-            'almacen_id'  => ['required','integer'],
+        // Validación base
+        $data = $req->validate([
+            'material_id' => ['required', 'integer'],
+            'almacen_id'  => ['required', 'integer'],
         ]);
 
-        // Material SOLO de esta empresa
+        $materialId = (int) $data['material_id'];
+        $almacenId  = (int) $data['almacen_id'];
+
+        /**
+         * ✅ Seguridad multiempresa:
+         * - Material SOLO de esta empresa
+         * - Almacén SOLO de esta empresa
+         */
         $material = Material::where('empresa_id', $empresaId)
-            ->where('id', (int) $req->material_id)
+            ->where('id', $materialId)
             ->firstOrFail();
 
-        // Almacén SOLO de esta empresa
-        $almacenId = (int) $req->almacen_id;
         Almacen::where('empresa_id', $empresaId)
             ->where('id', $almacenId)
             ->firstOrFail();
 
-        // Movimientos SOLO de esta empresa + material + almacén involucrado
+        /**
+         * Movimientos SOLO de esta empresa + material + almacén involucrado
+         */
         $movs = InvMovimiento::where('empresa_id', $empresaId)
             ->where('material_id', $material->id)
             ->where(function ($q) use ($almacenId) {
@@ -86,18 +106,24 @@ class KardexController extends Controller
             ->get();
 
         $rows = [];
-        $saldo = 0.0;
-        $entradas = 0.0;
-        $salidas = 0.0;
+
+        // Entradas/Salidas enteras
+        $saldo    = 0.0;  // saldo con decimales (2)
+        $entradas = 0;    // entero
+        $salidas  = 0;    // entero
 
         foreach ($movs as $m) {
             $entra = ((int) $m->almacen_destino_id === $almacenId);
             $sale  = ((int) $m->almacen_origen_id === $almacenId);
 
-            $entrada = $entra ? (float) $m->cantidad : 0.0;
-            $salida  = $sale  ? (float) $m->cantidad : 0.0;
+            // cantidad como ENTERO (sin decimales)
+            $cant = (int) round((float) $m->cantidad, 0);
 
-            $saldo = $saldo + $entrada - $salida;
+            $entrada = $entra ? $cant : 0;
+            $salida  = $sale  ? $cant : 0;
+
+            // saldo en 2 decimales (aunque entrada/salida sea entero)
+            $saldo = round($saldo + $entrada - $salida, 2);
 
             $entradas += $entrada;
             $salidas  += $salida;
@@ -113,9 +139,9 @@ class KardexController extends Controller
         }
 
         $totales = [
-            'entradas' => round($entradas, 4),
-            'salidas'  => round($salidas, 4),
-            'saldo'    => round($saldo, 4),
+            'entradas' => (int) $entradas,
+            'salidas'  => (int) $salidas,
+            'saldo'    => round((float) $saldo, 2),
             'material' => $material->descripcion,
         ];
 

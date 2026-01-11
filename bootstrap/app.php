@@ -16,11 +16,21 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
 
-        // ✅ Alias para Spatie Permissions (Laravel 11)
+        // Alias para Spatie Permissions (Laravel 11)
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
+
+            // TU MIDDLEWARE (el que daba error "Target class ... does not exist")
+            'admin_or_superadmin' => \App\Http\Middleware\AdminOrSuperAdmin::class,
+            'superadmin_only'     => \App\Http\Middleware\SuperAdminOnly::class,
+
+        ]);
+
+        // Middleware de contexto de empresa (sin Kernel)
+        $middleware->web(append: [
+            \App\Http\Middleware\EmpresaContext::class,
         ]);
 
     })

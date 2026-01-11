@@ -5,15 +5,46 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * IMPORTANTE:
+ * - Para usuarios normales, la empresa sale de auth()->user()->empresa_id
+ * - Para Super Admin, la empresa seleccionada sale de EmpresaScope (sesión)
+ */
+use App\Support\EmpresaScope;
+
 class InventarioExistenciasController extends Controller
 {
+    /**
+     * EMPRESA ACTUAL (FIX)
+     *
+     * Antes: solo leía auth()->user()->empresa_id
+     * Problema: Super Admin normalmente tiene empresa_id = 0/null => 403
+     *
+     * Ahora:
+     * 1) Si existe EmpresaScope (super admin eligió empresa) => usamos esa
+     * 2) Si no, caemos al empresa_id del usuario (usuarios normales)
+     * 3) Si ninguna existe => 403 con mensaje claro
+     *
+     * Copia este mismo patrón en tus otros controllers (Almacen, Material, Movimientos, Kardex, etc.)
+     */
     private function empresaIdOrAbort(): int
     {
         $user = auth()->user();
-        $empresaId = (int) ($user->empresa_id ?? 0);
 
+        // 1) empresa elegida por Super Admin (guardada en sesión)
+        $scopeEmpresaId = (int) EmpresaScope::getId();
+
+        // 2) fallback: empresa asignada al usuario normal
+        $userEmpresaId = (int) ($user->empresa_id ?? 0);
+
+        // 3) resolver empresa final
+        $empresaId = $scopeEmpresaId > 0 ? $scopeEmpresaId : $userEmpresaId;
+
+        // 4) si no hay empresa, bloquear con mensaje correcto
         if ($empresaId <= 0) {
-            abort(403, 'Tu usuario no tiene empresa asignada.');
+            // Nota: aquí puedes poner un mensaje más específico si quieres:
+            // - "Seleccione una empresa para continuar."
+            abort(403, 'Seleccione una empresa para continuar.');
         }
 
         return $empresaId;
@@ -29,6 +60,7 @@ class InventarioExistenciasController extends Controller
      */
     public function api(Request $request)
     {
+        // FIX aplicado aquí (empresa sale de Scope o del usuario)
         $empresaId = $this->empresaIdOrAbort();
 
         $q = trim((string) $request->query('q', ''));

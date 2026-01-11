@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 05-01-2026 a las 05:39:20
+-- Tiempo de generación: 11-01-2026 a las 18:41:01
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -27,16 +27,20 @@ SET time_zone = "+00:00";
 -- Estructura de tabla para la tabla `almacenes`
 --
 
-CREATE TABLE `almacenes` (
-  `id` bigint(20) UNSIGNED NOT NULL,
+DROP TABLE IF EXISTS `almacenes`;
+CREATE TABLE IF NOT EXISTS `almacenes` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
   `empresa_id` bigint(20) UNSIGNED DEFAULT NULL,
   `codigo` varchar(30) NOT NULL,
   `nombre` varchar(120) NOT NULL,
   `ubicacion` varchar(200) DEFAULT NULL,
   `activo` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `almacenes_empresa_codigo_unique` (`empresa_id`,`codigo`),
+  KEY `almacenes_empresa_id_index` (`empresa_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `almacenes`
@@ -44,7 +48,8 @@ CREATE TABLE `almacenes` (
 
 INSERT INTO `almacenes` (`id`, `empresa_id`, `codigo`, `nombre`, `ubicacion`, `activo`, `created_at`, `updated_at`) VALUES
 (3, 1, 'ALM-001', 'Almacen Principal', 'EDIFICIO VERDE', 1, '2026-01-02 07:35:31', '2026-01-02 20:41:54'),
-(4, 1, 'ALM-002', 'Almacén Capital', 'EDIFICIO VERDE', 0, '2026-01-02 07:44:35', '2026-01-05 07:56:48');
+(4, 1, 'ALM-002', 'Almacén Capital', 'EDIFICIO VERDE', 1, '2026-01-02 07:44:35', '2026-01-11 00:45:42'),
+(7, 2, 'ALM-001', 'ALMACEN 01', 'BODEA', 1, '2026-01-11 09:31:05', '2026-01-11 09:31:05');
 
 -- --------------------------------------------------------
 
@@ -52,10 +57,12 @@ INSERT INTO `almacenes` (`id`, `empresa_id`, `codigo`, `nombre`, `ubicacion`, `a
 -- Estructura de tabla para la tabla `cache`
 --
 
-CREATE TABLE `cache` (
+DROP TABLE IF EXISTS `cache`;
+CREATE TABLE IF NOT EXISTS `cache` (
   `key` varchar(255) NOT NULL,
   `value` mediumtext NOT NULL,
-  `expiration` int(11) NOT NULL
+  `expiration` int(11) NOT NULL,
+  PRIMARY KEY (`key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -63,7 +70,7 @@ CREATE TABLE `cache` (
 --
 
 INSERT INTO `cache` (`key`, `value`, `expiration`) VALUES
-('spatie.permission.cache', 'a:3:{s:5:\"alias\";a:4:{s:1:\"a\";s:2:\"id\";s:1:\"b\";s:4:\"name\";s:1:\"c\";s:10:\"guard_name\";s:1:\"r\";s:5:\"roles\";}s:11:\"permissions\";a:38:{i:0;a:4:{s:1:\"a\";i:1;s:1:\"b\";s:9:\"admin.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:1;a:4:{s:1:\"a\";i:2;s:1:\"b\";s:13:\"dashboard.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:2;a:4:{s:1:\"a\";i:3;s:1:\"b\";s:12:\"usuarios.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:3;a:4:{s:1:\"a\";i:4;s:1:\"b\";s:14:\"usuarios.crear\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:4;a:4:{s:1:\"a\";i:5;s:1:\"b\";s:15:\"usuarios.editar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:5;a:4:{s:1:\"a\";i:6;s:1:\"b\";s:17:\"usuarios.eliminar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:6;a:4:{s:1:\"a\";i:7;s:1:\"b\";s:9:\"roles.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:7;a:4:{s:1:\"a\";i:8;s:1:\"b\";s:11:\"roles.crear\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:8;a:4:{s:1:\"a\";i:9;s:1:\"b\";s:12:\"roles.editar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:9;a:4:{s:1:\"a\";i:10;s:1:\"b\";s:14:\"roles.eliminar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:10;a:4:{s:1:\"a\";i:11;s:1:\"b\";s:12:\"permisos.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:11;a:4:{s:1:\"a\";i:12;s:1:\"b\";s:14:\"permisos.crear\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:12;a:4:{s:1:\"a\";i:13;s:1:\"b\";s:15:\"permisos.editar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:13;a:4:{s:1:\"a\";i:14;s:1:\"b\";s:17:\"permisos.eliminar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:14;a:4:{s:1:\"a\";i:15;s:1:\"b\";s:12:\"empresas.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:15;a:4:{s:1:\"a\";i:16;s:1:\"b\";s:14:\"empresas.crear\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:16;a:4:{s:1:\"a\";i:17;s:1:\"b\";s:15:\"empresas.editar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:17;a:4:{s:1:\"a\";i:18;s:1:\"b\";s:17:\"empresas.eliminar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:18;a:4:{s:1:\"a\";i:19;s:1:\"b\";s:13:\"proyectos.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:19;a:4:{s:1:\"a\";i:20;s:1:\"b\";s:15:\"proyectos.crear\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:20;a:4:{s:1:\"a\";i:21;s:1:\"b\";s:16:\"proyectos.editar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:21;a:4:{s:1:\"a\";i:22;s:1:\"b\";s:18:\"proyectos.eliminar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:3;}}i:22;a:4:{s:1:\"a\";i:23;s:1:\"b\";s:14:\"inventario.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:23;a:4:{s:1:\"a\";i:24;s:1:\"b\";s:16:\"inventario.crear\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:24;a:4:{s:1:\"a\";i:25;s:1:\"b\";s:10:\"kardex.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:25;a:4:{s:1:\"a\";i:26;s:1:\"b\";s:14:\"materiales.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:26;a:4:{s:1:\"a\";i:27;s:1:\"b\";s:16:\"materiales.crear\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:27;a:4:{s:1:\"a\";i:28;s:1:\"b\";s:17:\"materiales.editar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:28;a:4:{s:1:\"a\";i:29;s:1:\"b\";s:19:\"materiales.eliminar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:29;a:4:{s:1:\"a\";i:30;s:1:\"b\";s:13:\"almacenes.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:30;a:4:{s:1:\"a\";i:31;s:1:\"b\";s:15:\"almacenes.crear\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:31;a:4:{s:1:\"a\";i:32;s:1:\"b\";s:16:\"almacenes.editar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:32;a:4:{s:1:\"a\";i:33;s:1:\"b\";s:18:\"almacenes.eliminar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:33;a:4:{s:1:\"a\";i:34;s:1:\"b\";s:13:\"miempresa.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:34;a:4:{s:1:\"a\";i:35;s:1:\"b\";s:16:\"miempresa.editar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:35;a:4:{s:1:\"a\";i:36;s:1:\"b\";s:17:\"movimientos.crear\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:2;}}i:36;a:4:{s:1:\"a\";i:37;s:1:\"b\";s:18:\"movimientos.editar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:2;}}i:37;a:4:{s:1:\"a\";i:38;s:1:\"b\";s:15:\"movimientos.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:2;}}}s:5:\"roles\";a:3:{i:0;a:3:{s:1:\"a\";i:1;s:1:\"b\";s:10:\"SuperAdmin\";s:1:\"c\";s:3:\"web\";}i:1;a:3:{s:1:\"a\";i:2;s:1:\"b\";s:5:\"Admin\";s:1:\"c\";s:3:\"web\";}i:2;a:3:{s:1:\"a\";i:3;s:1:\"b\";s:10:\"Supervisor\";s:1:\"c\";s:3:\"web\";}}}', 1767668116);
+('spatie.permission.cache', 'a:3:{s:5:\"alias\";a:4:{s:1:\"a\";s:2:\"id\";s:1:\"b\";s:4:\"name\";s:1:\"c\";s:10:\"guard_name\";s:1:\"r\";s:5:\"roles\";}s:11:\"permissions\";a:38:{i:0;a:4:{s:1:\"a\";i:1;s:1:\"b\";s:9:\"admin.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:1;a:4:{s:1:\"a\";i:2;s:1:\"b\";s:13:\"dashboard.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:2;a:4:{s:1:\"a\";i:3;s:1:\"b\";s:12:\"usuarios.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:3;a:4:{s:1:\"a\";i:4;s:1:\"b\";s:14:\"usuarios.crear\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:4;a:4:{s:1:\"a\";i:5;s:1:\"b\";s:15:\"usuarios.editar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:5;a:4:{s:1:\"a\";i:6;s:1:\"b\";s:17:\"usuarios.eliminar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:6;a:4:{s:1:\"a\";i:7;s:1:\"b\";s:9:\"roles.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:7;a:4:{s:1:\"a\";i:8;s:1:\"b\";s:11:\"roles.crear\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:8;a:4:{s:1:\"a\";i:9;s:1:\"b\";s:12:\"roles.editar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:9;a:4:{s:1:\"a\";i:10;s:1:\"b\";s:14:\"roles.eliminar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:10;a:4:{s:1:\"a\";i:11;s:1:\"b\";s:12:\"permisos.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:11;a:4:{s:1:\"a\";i:12;s:1:\"b\";s:14:\"permisos.crear\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:12;a:4:{s:1:\"a\";i:13;s:1:\"b\";s:15:\"permisos.editar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:13;a:4:{s:1:\"a\";i:14;s:1:\"b\";s:17:\"permisos.eliminar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:1;}}i:14;a:3:{s:1:\"a\";i:15;s:1:\"b\";s:12:\"empresas.ver\";s:1:\"c\";s:3:\"web\";}i:15;a:3:{s:1:\"a\";i:16;s:1:\"b\";s:14:\"empresas.crear\";s:1:\"c\";s:3:\"web\";}i:16;a:3:{s:1:\"a\";i:17;s:1:\"b\";s:15:\"empresas.editar\";s:1:\"c\";s:3:\"web\";}i:17;a:3:{s:1:\"a\";i:18;s:1:\"b\";s:17:\"empresas.eliminar\";s:1:\"c\";s:3:\"web\";}i:18;a:4:{s:1:\"a\";i:19;s:1:\"b\";s:13:\"proyectos.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:19;a:4:{s:1:\"a\";i:20;s:1:\"b\";s:15:\"proyectos.crear\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:20;a:4:{s:1:\"a\";i:21;s:1:\"b\";s:16:\"proyectos.editar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:21;a:4:{s:1:\"a\";i:22;s:1:\"b\";s:18:\"proyectos.eliminar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:3;}}i:22;a:4:{s:1:\"a\";i:23;s:1:\"b\";s:14:\"inventario.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:23;a:4:{s:1:\"a\";i:24;s:1:\"b\";s:16:\"inventario.crear\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:24;a:4:{s:1:\"a\";i:25;s:1:\"b\";s:10:\"kardex.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:25;a:4:{s:1:\"a\";i:26;s:1:\"b\";s:14:\"materiales.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:26;a:4:{s:1:\"a\";i:27;s:1:\"b\";s:16:\"materiales.crear\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:27;a:4:{s:1:\"a\";i:28;s:1:\"b\";s:17:\"materiales.editar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:28;a:4:{s:1:\"a\";i:29;s:1:\"b\";s:19:\"materiales.eliminar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:29;a:4:{s:1:\"a\";i:30;s:1:\"b\";s:13:\"almacenes.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:30;a:4:{s:1:\"a\";i:31;s:1:\"b\";s:15:\"almacenes.crear\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:31;a:4:{s:1:\"a\";i:32;s:1:\"b\";s:16:\"almacenes.editar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:32;a:4:{s:1:\"a\";i:33;s:1:\"b\";s:18:\"almacenes.eliminar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:3:{i:0;i:1;i:1;i:2;i:2;i:3;}}i:33;a:4:{s:1:\"a\";i:34;s:1:\"b\";s:13:\"miempresa.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:34;a:4:{s:1:\"a\";i:35;s:1:\"b\";s:16:\"miempresa.editar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:2:{i:0;i:1;i:1;i:2;}}i:35;a:4:{s:1:\"a\";i:36;s:1:\"b\";s:17:\"movimientos.crear\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:2;}}i:36;a:4:{s:1:\"a\";i:37;s:1:\"b\";s:18:\"movimientos.editar\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:2;}}i:37;a:4:{s:1:\"a\";i:38;s:1:\"b\";s:15:\"movimientos.ver\";s:1:\"c\";s:3:\"web\";s:1:\"r\";a:1:{i:0;i:2;}}}s:5:\"roles\";a:3:{i:0;a:3:{s:1:\"a\";i:1;s:1:\"b\";s:10:\"SuperAdmin\";s:1:\"c\";s:3:\"web\";}i:1;a:3:{s:1:\"a\";i:2;s:1:\"b\";s:5:\"Admin\";s:1:\"c\";s:3:\"web\";}i:2;a:3:{s:1:\"a\";i:3;s:1:\"b\";s:10:\"Supervisor\";s:1:\"c\";s:3:\"web\";}}}', 1768192265);
 
 -- --------------------------------------------------------
 
@@ -71,10 +78,12 @@ INSERT INTO `cache` (`key`, `value`, `expiration`) VALUES
 -- Estructura de tabla para la tabla `cache_locks`
 --
 
-CREATE TABLE `cache_locks` (
+DROP TABLE IF EXISTS `cache_locks`;
+CREATE TABLE IF NOT EXISTS `cache_locks` (
   `key` varchar(255) NOT NULL,
   `owner` varchar(255) NOT NULL,
-  `expiration` int(11) NOT NULL
+  `expiration` int(11) NOT NULL,
+  PRIMARY KEY (`key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -83,11 +92,14 @@ CREATE TABLE `cache_locks` (
 -- Estructura de tabla para la tabla `clases_construccion`
 --
 
-CREATE TABLE `clases_construccion` (
-  `id` bigint(20) UNSIGNED NOT NULL,
+DROP TABLE IF EXISTS `clases_construccion`;
+CREATE TABLE IF NOT EXISTS `clases_construccion` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
   `nombre` varchar(80) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `clases_construccion_nombre_unique` (`nombre`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -96,8 +108,9 @@ CREATE TABLE `clases_construccion` (
 -- Estructura de tabla para la tabla `empresas`
 --
 
-CREATE TABLE `empresas` (
-  `id` bigint(20) UNSIGNED NOT NULL,
+DROP TABLE IF EXISTS `empresas`;
+CREATE TABLE IF NOT EXISTS `empresas` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
   `nombre` varchar(160) NOT NULL,
   `logo_path` varchar(255) DEFAULT NULL,
   `settings` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`settings`)),
@@ -111,15 +124,18 @@ CREATE TABLE `empresas` (
   `admin_user_id` bigint(20) UNSIGNED DEFAULT NULL,
   `activo` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `empresas_admin_user_id_foreign` (`admin_user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `empresas`
 --
 
 INSERT INTO `empresas` (`id`, `nombre`, `logo_path`, `settings`, `ruc`, `dv`, `contacto`, `direccion`, `activa`, `telefono`, `email`, `admin_user_id`, `activo`, `created_at`, `updated_at`) VALUES
-(1, 'evadan constructora', 'empresas/logos/2u26anpjv7LfANCZsmlYTdQlrJkkZMzB354JLh9G.webp', NULL, '123456-15-123456', '15', 'Adan Noel', 'Panama', 1, '62440000', 'ventas@evadan.com', 2, 1, '2025-12-31 07:41:57', '2026-01-03 01:37:19');
+(1, 'evadan constructora', 'empresas/logos/2u26anpjv7LfANCZsmlYTdQlrJkkZMzB354JLh9G.webp', NULL, '123456-15-123456', '15', 'Adan Noel', 'Panama', 1, '62440000', 'ventas@evadan.com', 2, 1, '2025-12-31 07:41:57', '2026-01-03 01:37:19'),
+(2, 'SuplidoraJC', NULL, NULL, '100199-12-887755', NULL, NULL, NULL, 1, NULL, NULL, 4, 1, '2026-01-11 07:58:37', '2026-01-11 07:58:37');
 
 -- --------------------------------------------------------
 
@@ -127,14 +143,17 @@ INSERT INTO `empresas` (`id`, `nombre`, `logo_path`, `settings`, `ruc`, `dv`, `c
 -- Estructura de tabla para la tabla `failed_jobs`
 --
 
-CREATE TABLE `failed_jobs` (
-  `id` bigint(20) UNSIGNED NOT NULL,
+DROP TABLE IF EXISTS `failed_jobs`;
+CREATE TABLE IF NOT EXISTS `failed_jobs` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
   `uuid` varchar(255) NOT NULL,
   `connection` text NOT NULL,
   `queue` text NOT NULL,
   `payload` longtext NOT NULL,
   `exception` longtext NOT NULL,
-  `failed_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `failed_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `failed_jobs_uuid_unique` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -143,8 +162,9 @@ CREATE TABLE `failed_jobs` (
 -- Estructura de tabla para la tabla `inv_existencias`
 --
 
-CREATE TABLE `inv_existencias` (
-  `id` bigint(20) UNSIGNED NOT NULL,
+DROP TABLE IF EXISTS `inv_existencias`;
+CREATE TABLE IF NOT EXISTS `inv_existencias` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
   `empresa_id` bigint(20) UNSIGNED DEFAULT NULL,
   `material_id` bigint(20) UNSIGNED NOT NULL,
   `cantidad` decimal(14,4) NOT NULL DEFAULT 0.0000,
@@ -152,8 +172,13 @@ CREATE TABLE `inv_existencias` (
   `stock` decimal(14,4) NOT NULL DEFAULT 0.0000,
   `costo_promedio` decimal(14,4) NOT NULL DEFAULT 0.0000,
   `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `inv_existencias_material_id_almacen_id_unique` (`material_id`,`almacen_id`),
+  UNIQUE KEY `inv_existencias_empresa_material_almacen_unique` (`empresa_id`,`material_id`,`almacen_id`),
+  UNIQUE KEY `inv_existencias_emp_alm_mat_unique` (`empresa_id`,`almacen_id`,`material_id`),
+  KEY `inv_existencias_almacen_id_foreign` (`almacen_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `inv_existencias`
@@ -162,7 +187,8 @@ CREATE TABLE `inv_existencias` (
 INSERT INTO `inv_existencias` (`id`, `empresa_id`, `material_id`, `cantidad`, `almacen_id`, `stock`, `costo_promedio`, `created_at`, `updated_at`) VALUES
 (1, 1, 2, 0.0000, 3, 640.0000, 8.4231, '2026-01-02 08:26:49', '2026-01-02 10:17:12'),
 (2, 1, 2, 0.0000, 4, 10.0000, 0.0000, '2026-01-02 10:17:12', '2026-01-02 10:17:12'),
-(3, 1, 3, 0.0000, 3, 510.0000, 0.8500, '2026-01-02 10:37:06', '2026-01-02 20:43:15');
+(3, 1, 3, 0.0000, 3, 510.0000, 0.8500, '2026-01-02 10:37:06', '2026-01-02 20:43:15'),
+(4, 2, 4, 0.0000, 7, 100.0000, 0.4200, '2026-01-11 09:31:54', '2026-01-11 09:31:54');
 
 -- --------------------------------------------------------
 
@@ -170,37 +196,44 @@ INSERT INTO `inv_existencias` (`id`, `empresa_id`, `material_id`, `cantidad`, `a
 -- Estructura de tabla para la tabla `inv_movimientos`
 --
 
-CREATE TABLE `inv_movimientos` (
-  `id` bigint(20) UNSIGNED NOT NULL,
+DROP TABLE IF EXISTS `inv_movimientos`;
+CREATE TABLE IF NOT EXISTS `inv_movimientos` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
   `empresa_id` bigint(20) UNSIGNED DEFAULT NULL,
   `fecha` date NOT NULL,
   `tipo` enum('entrada','salida','traslado','ajuste') NOT NULL,
   `material_id` bigint(20) UNSIGNED NOT NULL,
   `almacen_origen_id` bigint(20) UNSIGNED DEFAULT NULL,
   `almacen_destino_id` bigint(20) UNSIGNED DEFAULT NULL,
-  `cantidad` decimal(14,4) NOT NULL,
+  `cantidad` int(11) NOT NULL,
   `costo_unitario` decimal(14,4) DEFAULT NULL,
   `referencia` varchar(80) DEFAULT NULL,
   `meta` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`meta`)),
   `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `inv_movimientos_almacen_origen_id_foreign` (`almacen_origen_id`),
+  KEY `inv_movimientos_almacen_destino_id_foreign` (`almacen_destino_id`),
+  KEY `inv_movimientos_material_id_fecha_index` (`material_id`,`fecha`),
+  KEY `inv_movimientos_empresa_id_index` (`empresa_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `inv_movimientos`
 --
 
 INSERT INTO `inv_movimientos` (`id`, `empresa_id`, `fecha`, `tipo`, `material_id`, `almacen_origen_id`, `almacen_destino_id`, `cantidad`, `costo_unitario`, `referencia`, `meta`, `created_at`, `updated_at`) VALUES
-(1, NULL, '2026-01-02', 'entrada', 2, NULL, 3, 100.0000, 8.0000, 'OC-001', NULL, '2026-01-02 08:26:49', '2026-01-02 08:26:49'),
-(2, NULL, '2026-01-02', 'entrada', 2, NULL, 3, 100.0000, 8.5000, 'OC-001', NULL, '2026-01-02 08:30:46', '2026-01-02 08:30:46'),
-(3, NULL, '2026-01-02', 'entrada', 2, NULL, 3, 100.0000, 8.5000, NULL, NULL, '2026-01-02 09:48:43', '2026-01-02 09:48:43'),
-(4, NULL, '2026-01-02', 'entrada', 2, NULL, 3, 100.0000, 8.5000, 'oc-001', NULL, '2026-01-02 09:50:22', '2026-01-02 09:50:22'),
-(5, NULL, '2026-01-02', 'entrada', 2, NULL, 3, 100.0000, 8.5000, 'oc-001', NULL, '2026-01-02 10:00:06', '2026-01-02 10:00:06'),
-(6, NULL, '2026-01-02', 'entrada', 2, NULL, 3, 100.0000, 8.5000, NULL, NULL, '2026-01-02 10:08:41', '2026-01-02 10:08:41'),
-(7, 1, '2026-01-02', 'entrada', 2, NULL, 3, 50.0000, 8.5000, 'oc-002', NULL, '2026-01-02 10:15:33', '2026-01-02 10:15:33'),
-(8, 1, '2026-01-02', 'traslado', 2, 3, 4, 10.0000, NULL, NULL, NULL, '2026-01-02 10:17:12', '2026-01-02 10:17:12'),
-(9, 1, '2026-01-02', 'entrada', 3, NULL, 3, 500.0000, 0.8500, 'oc-003', NULL, '2026-01-02 10:37:06', '2026-01-02 10:37:06'),
-(10, 1, '2026-01-02', 'ajuste', 3, NULL, 3, 10.0000, 0.8500, NULL, NULL, '2026-01-02 20:43:15', '2026-01-02 20:43:15');
+(1, 1, '2026-01-02', 'entrada', 2, NULL, 3, 100, 8.0000, 'OC-001', NULL, '2026-01-02 08:26:49', '2026-01-02 08:26:49'),
+(2, 1, '2026-01-02', 'entrada', 2, NULL, 3, 100, 8.5000, 'OC-001', NULL, '2026-01-02 08:30:46', '2026-01-02 08:30:46'),
+(3, 1, '2026-01-02', 'entrada', 2, NULL, 3, 100, 8.5000, NULL, NULL, '2026-01-02 09:48:43', '2026-01-02 09:48:43'),
+(4, 1, '2026-01-02', 'entrada', 2, NULL, 3, 100, 8.5000, 'oc-001', NULL, '2026-01-02 09:50:22', '2026-01-02 09:50:22'),
+(5, 1, '2026-01-02', 'entrada', 2, NULL, 3, 100, 8.5000, 'oc-001', NULL, '2026-01-02 10:00:06', '2026-01-02 10:00:06'),
+(6, 1, '2026-01-02', 'entrada', 2, NULL, 3, 100, 8.5000, NULL, NULL, '2026-01-02 10:08:41', '2026-01-02 10:08:41'),
+(7, 1, '2026-01-02', 'entrada', 2, NULL, 3, 50, 8.5000, 'oc-002', NULL, '2026-01-02 10:15:33', '2026-01-02 10:15:33'),
+(8, 1, '2026-01-02', 'traslado', 2, 3, 4, 10, NULL, NULL, NULL, '2026-01-02 10:17:12', '2026-01-02 10:17:12'),
+(9, 1, '2026-01-02', 'entrada', 3, NULL, 3, 500, 0.8500, 'oc-003', NULL, '2026-01-02 10:37:06', '2026-01-02 10:37:06'),
+(10, 1, '2026-01-02', 'ajuste', 3, NULL, 3, 10, 0.8500, NULL, NULL, '2026-01-02 20:43:15', '2026-01-02 20:43:15'),
+(11, 2, '2026-01-11', 'ajuste', 4, NULL, 7, 100, 0.4200, NULL, NULL, '2026-01-11 09:31:54', '2026-01-11 09:31:54');
 
 -- --------------------------------------------------------
 
@@ -208,14 +241,17 @@ INSERT INTO `inv_movimientos` (`id`, `empresa_id`, `fecha`, `tipo`, `material_id
 -- Estructura de tabla para la tabla `jobs`
 --
 
-CREATE TABLE `jobs` (
-  `id` bigint(20) UNSIGNED NOT NULL,
+DROP TABLE IF EXISTS `jobs`;
+CREATE TABLE IF NOT EXISTS `jobs` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
   `queue` varchar(255) NOT NULL,
   `payload` longtext NOT NULL,
   `attempts` tinyint(3) UNSIGNED NOT NULL,
   `reserved_at` int(10) UNSIGNED DEFAULT NULL,
   `available_at` int(10) UNSIGNED NOT NULL,
-  `created_at` int(10) UNSIGNED NOT NULL
+  `created_at` int(10) UNSIGNED NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `jobs_queue_index` (`queue`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -224,7 +260,8 @@ CREATE TABLE `jobs` (
 -- Estructura de tabla para la tabla `job_batches`
 --
 
-CREATE TABLE `job_batches` (
+DROP TABLE IF EXISTS `job_batches`;
+CREATE TABLE IF NOT EXISTS `job_batches` (
   `id` varchar(255) NOT NULL,
   `name` varchar(255) NOT NULL,
   `total_jobs` int(11) NOT NULL,
@@ -234,7 +271,8 @@ CREATE TABLE `job_batches` (
   `options` mediumtext DEFAULT NULL,
   `cancelled_at` int(11) DEFAULT NULL,
   `created_at` int(11) NOT NULL,
-  `finished_at` int(11) DEFAULT NULL
+  `finished_at` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -243,8 +281,9 @@ CREATE TABLE `job_batches` (
 -- Estructura de tabla para la tabla `materiales`
 --
 
-CREATE TABLE `materiales` (
-  `id` bigint(20) UNSIGNED NOT NULL,
+DROP TABLE IF EXISTS `materiales`;
+CREATE TABLE IF NOT EXISTS `materiales` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
   `codigo` varchar(50) NOT NULL,
   `empresa_id` bigint(20) UNSIGNED DEFAULT NULL,
   `sku` varchar(50) NOT NULL,
@@ -255,16 +294,25 @@ CREATE TABLE `materiales` (
   `costo_estandar` decimal(14,4) NOT NULL DEFAULT 0.0000,
   `activo` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `materiales_sku_unique` (`sku`),
+  UNIQUE KEY `materiales_empresa_codigo_unique` (`empresa_id`,`codigo`),
+  UNIQUE KEY `materiales_empresa_descripcion_unique` (`empresa_id`,`descripcion`),
+  KEY `materiales_unidad_id_foreign` (`unidad_id`),
+  KEY `materiales_clase_construccion_id_foreign` (`clase_construccion_id`),
+  KEY `materiales_empresa_id_index` (`empresa_id`),
+  KEY `materiales_empresa_id_codigo_index` (`empresa_id`,`codigo`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `materiales`
 --
 
 INSERT INTO `materiales` (`id`, `codigo`, `empresa_id`, `sku`, `descripcion`, `unidad`, `unidad_id`, `clase_construccion_id`, `costo_estandar`, `activo`, `created_at`, `updated_at`) VALUES
-(2, 'MAT-001', 1, 'E1-MAT-001', 'cemento', 'Saco', 2, NULL, 0.0000, 0, '2026-01-02 03:40:46', '2026-01-05 08:57:22'),
-(3, 'MAT-002', 1, 'E1-MAT-002', 'Ladrillos', 'Unidad', 1, NULL, 0.0000, 1, '2026-01-02 10:36:32', '2026-01-02 10:36:32');
+(2, 'MAT-001', 1, 'E1-MAT-001', 'cemento', 'Saco', 2, NULL, 0.0000, 1, '2026-01-02 03:40:46', '2026-01-11 03:11:01'),
+(3, 'MAT-002', 1, 'E1-MAT-002', 'Ladrillos', 'Unidad', 1, NULL, 0.0000, 1, '2026-01-02 10:36:32', '2026-01-02 10:36:32'),
+(4, 'MAT-100', 2, 'E2-MAT-100', 'Bloques 6', 'Unidad', 1, NULL, 0.0000, 1, '2026-01-11 09:14:47', '2026-01-11 09:14:47');
 
 -- --------------------------------------------------------
 
@@ -272,11 +320,13 @@ INSERT INTO `materiales` (`id`, `codigo`, `empresa_id`, `sku`, `descripcion`, `u
 -- Estructura de tabla para la tabla `migrations`
 --
 
-CREATE TABLE `migrations` (
-  `id` int(10) UNSIGNED NOT NULL,
+DROP TABLE IF EXISTS `migrations`;
+CREATE TABLE IF NOT EXISTS `migrations` (
+  `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   `migration` varchar(255) NOT NULL,
-  `batch` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `batch` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=37 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `migrations`
@@ -317,7 +367,8 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (32, '2025_12_31_051643_add_codigo_to_materiales_table', 12),
 (33, '2025_12_31_053005_add_unidad_to_materiales_table', 13),
 (34, '2026_01_01_202125_patch_materiales_add_empresa_codigo_unidad_activo', 14),
-(35, '2026_01_02_025333_add_empresa_id_and_cantidad_to_inv_existencias_table', 15);
+(35, '2026_01_02_025333_add_empresa_id_and_cantidad_to_inv_existencias_table', 15),
+(36, '2026_01_02_030329_add_unique_index_to_inv_existencias_table', 16);
 
 -- --------------------------------------------------------
 
@@ -325,10 +376,13 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 -- Estructura de tabla para la tabla `model_has_permissions`
 --
 
-CREATE TABLE `model_has_permissions` (
+DROP TABLE IF EXISTS `model_has_permissions`;
+CREATE TABLE IF NOT EXISTS `model_has_permissions` (
   `permission_id` bigint(20) UNSIGNED NOT NULL,
   `model_type` varchar(255) NOT NULL,
-  `model_id` bigint(20) UNSIGNED NOT NULL
+  `model_id` bigint(20) UNSIGNED NOT NULL,
+  PRIMARY KEY (`permission_id`,`model_id`,`model_type`),
+  KEY `model_has_permissions_model_id_model_type_index` (`model_id`,`model_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -337,10 +391,13 @@ CREATE TABLE `model_has_permissions` (
 -- Estructura de tabla para la tabla `model_has_roles`
 --
 
-CREATE TABLE `model_has_roles` (
+DROP TABLE IF EXISTS `model_has_roles`;
+CREATE TABLE IF NOT EXISTS `model_has_roles` (
   `role_id` bigint(20) UNSIGNED NOT NULL,
   `model_type` varchar(255) NOT NULL,
-  `model_id` bigint(20) UNSIGNED NOT NULL
+  `model_id` bigint(20) UNSIGNED NOT NULL,
+  PRIMARY KEY (`role_id`,`model_id`,`model_type`),
+  KEY `model_has_roles_model_id_model_type_index` (`model_id`,`model_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -350,6 +407,7 @@ CREATE TABLE `model_has_roles` (
 INSERT INTO `model_has_roles` (`role_id`, `model_type`, `model_id`) VALUES
 (1, 'App\\Models\\User', 1),
 (2, 'App\\Models\\User', 2),
+(2, 'App\\Models\\User', 4),
 (3, 'App\\Models\\User', 3);
 
 -- --------------------------------------------------------
@@ -358,10 +416,12 @@ INSERT INTO `model_has_roles` (`role_id`, `model_type`, `model_id`) VALUES
 -- Estructura de tabla para la tabla `password_reset_tokens`
 --
 
-CREATE TABLE `password_reset_tokens` (
+DROP TABLE IF EXISTS `password_reset_tokens`;
+CREATE TABLE IF NOT EXISTS `password_reset_tokens` (
   `email` varchar(255) NOT NULL,
   `token` varchar(255) NOT NULL,
-  `created_at` timestamp NULL DEFAULT NULL
+  `created_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -370,13 +430,16 @@ CREATE TABLE `password_reset_tokens` (
 -- Estructura de tabla para la tabla `permissions`
 --
 
-CREATE TABLE `permissions` (
-  `id` bigint(20) UNSIGNED NOT NULL,
+DROP TABLE IF EXISTS `permissions`;
+CREATE TABLE IF NOT EXISTS `permissions` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `guard_name` varchar(255) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `permissions_name_guard_name_unique` (`name`,`guard_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `permissions`
@@ -428,8 +491,9 @@ INSERT INTO `permissions` (`id`, `name`, `guard_name`, `created_at`, `updated_at
 -- Estructura de tabla para la tabla `proyectos`
 --
 
-CREATE TABLE `proyectos` (
-  `id` bigint(20) UNSIGNED NOT NULL,
+DROP TABLE IF EXISTS `proyectos`;
+CREATE TABLE IF NOT EXISTS `proyectos` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
   `empresa_id` bigint(20) UNSIGNED NOT NULL,
   `codigo` varchar(40) DEFAULT NULL,
   `nombre` varchar(160) NOT NULL,
@@ -440,7 +504,10 @@ CREATE TABLE `proyectos` (
   `presupuesto` decimal(14,2) NOT NULL DEFAULT 0.00,
   `activo` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `proyectos_empresa_id_estado_index` (`empresa_id`,`estado`),
+  KEY `proyectos_empresa_id_codigo_index` (`empresa_id`,`codigo`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -449,13 +516,16 @@ CREATE TABLE `proyectos` (
 -- Estructura de tabla para la tabla `roles`
 --
 
-CREATE TABLE `roles` (
-  `id` bigint(20) UNSIGNED NOT NULL,
+DROP TABLE IF EXISTS `roles`;
+CREATE TABLE IF NOT EXISTS `roles` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `guard_name` varchar(255) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `roles_name_guard_name_unique` (`name`,`guard_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `roles`
@@ -472,9 +542,12 @@ INSERT INTO `roles` (`id`, `name`, `guard_name`, `created_at`, `updated_at`) VAL
 -- Estructura de tabla para la tabla `role_has_permissions`
 --
 
-CREATE TABLE `role_has_permissions` (
+DROP TABLE IF EXISTS `role_has_permissions`;
+CREATE TABLE IF NOT EXISTS `role_has_permissions` (
   `permission_id` bigint(20) UNSIGNED NOT NULL,
-  `role_id` bigint(20) UNSIGNED NOT NULL
+  `role_id` bigint(20) UNSIGNED NOT NULL,
+  PRIMARY KEY (`permission_id`,`role_id`),
+  KEY `role_has_permissions_role_id_foreign` (`role_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -495,17 +568,16 @@ INSERT INTO `role_has_permissions` (`permission_id`, `role_id`) VALUES
 (5, 2),
 (6, 1),
 (7, 1),
+(7, 2),
 (8, 1),
+(8, 2),
 (9, 1),
+(9, 2),
 (10, 1),
 (11, 1),
 (12, 1),
 (13, 1),
 (14, 1),
-(15, 1),
-(16, 1),
-(17, 1),
-(18, 1),
 (19, 1),
 (19, 2),
 (19, 3),
@@ -564,13 +636,17 @@ INSERT INTO `role_has_permissions` (`permission_id`, `role_id`) VALUES
 -- Estructura de tabla para la tabla `sessions`
 --
 
-CREATE TABLE `sessions` (
+DROP TABLE IF EXISTS `sessions`;
+CREATE TABLE IF NOT EXISTS `sessions` (
   `id` varchar(255) NOT NULL,
   `user_id` bigint(20) UNSIGNED DEFAULT NULL,
   `ip_address` varchar(45) DEFAULT NULL,
   `user_agent` text DEFAULT NULL,
   `payload` longtext NOT NULL,
-  `last_activity` int(11) NOT NULL
+  `last_activity` int(11) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `sessions_user_id_index` (`user_id`),
+  KEY `sessions_last_activity_index` (`last_activity`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -579,13 +655,16 @@ CREATE TABLE `sessions` (
 -- Estructura de tabla para la tabla `unidades`
 --
 
-CREATE TABLE `unidades` (
-  `id` bigint(20) UNSIGNED NOT NULL,
+DROP TABLE IF EXISTS `unidades`;
+CREATE TABLE IF NOT EXISTS `unidades` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
   `codigo` varchar(10) NOT NULL,
   `descripcion` varchar(80) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unidades_codigo_unique` (`codigo`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `unidades`
@@ -609,8 +688,9 @@ INSERT INTO `unidades` (`id`, `codigo`, `descripcion`, `created_at`, `updated_at
 -- Estructura de tabla para la tabla `users`
 --
 
-CREATE TABLE `users` (
-  `id` bigint(20) UNSIGNED NOT NULL,
+DROP TABLE IF EXISTS `users`;
+CREATE TABLE IF NOT EXISTS `users` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
   `empresa_id` bigint(20) UNSIGNED DEFAULT NULL,
   `name` varchar(255) NOT NULL,
   `email` varchar(255) NOT NULL,
@@ -619,273 +699,21 @@ CREATE TABLE `users` (
   `activo` tinyint(1) NOT NULL DEFAULT 1,
   `remember_token` varchar(100) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `users_email_unique` (`email`),
+  KEY `users_empresa_id_foreign` (`empresa_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `users`
 --
 
 INSERT INTO `users` (`id`, `empresa_id`, `name`, `email`, `email_verified_at`, `password`, `activo`, `remember_token`, `created_at`, `updated_at`) VALUES
-(1, NULL, 'Super Admin', 'superadmin@crm.local', NULL, '$2y$12$ppok5p7THLTZGTEm9yLH5OCivDObb2wmg6dqZ2CaPvq0PGK3Rd8K2', 1, 'pImgaG4NbcXgMw7QQ9Z3PrVzn6nVLpeNGtNAYmGZ5Uo5ZhhQHZdULP7soUgP', '2025-12-30 09:33:38', '2025-12-30 09:33:38'),
-(2, 1, 'Adan Noel', 'admin@evadan.com', NULL, '$2y$12$wg/lOuklv4vjZ3Je2wQG3uNhnTf8oUc2qkPSPsMunjHBnrTfM69LK', 1, 'KAet0kvnKyPAqlWHRmUh3obqYuVkxGUsTQABaaoY24X24ulEN9wJUI4rZU15', '2025-12-31 06:15:16', '2025-12-31 07:43:39'),
-(3, 1, 'Eva Smith', 'supervisor@evadan.com', NULL, '$2y$12$OTms0UJ2vcZJ5KtYK9WvLupvU0BEe7k39aDaPQB90X1JdGeMGztPC', 1, 'fYrC2QtfE6spdtceOcODnDYvcxAnmEAu27rO3Jc0E4cQrbZV0R2T3cDHhBmW', '2025-12-31 08:38:21', '2025-12-31 08:38:21');
-
---
--- Índices para tablas volcadas
---
-
---
--- Indices de la tabla `almacenes`
---
-ALTER TABLE `almacenes`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `almacenes_codigo_unique` (`codigo`),
-  ADD KEY `almacenes_empresa_id_index` (`empresa_id`);
-
---
--- Indices de la tabla `cache`
---
-ALTER TABLE `cache`
-  ADD PRIMARY KEY (`key`);
-
---
--- Indices de la tabla `cache_locks`
---
-ALTER TABLE `cache_locks`
-  ADD PRIMARY KEY (`key`);
-
---
--- Indices de la tabla `clases_construccion`
---
-ALTER TABLE `clases_construccion`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `clases_construccion_nombre_unique` (`nombre`);
-
---
--- Indices de la tabla `empresas`
---
-ALTER TABLE `empresas`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `empresas_admin_user_id_foreign` (`admin_user_id`);
-
---
--- Indices de la tabla `failed_jobs`
---
-ALTER TABLE `failed_jobs`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `failed_jobs_uuid_unique` (`uuid`);
-
---
--- Indices de la tabla `inv_existencias`
---
-ALTER TABLE `inv_existencias`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `inv_existencias_material_id_almacen_id_unique` (`material_id`,`almacen_id`),
-  ADD UNIQUE KEY `inv_existencias_empresa_material_almacen_unique` (`empresa_id`,`material_id`,`almacen_id`),
-  ADD KEY `inv_existencias_almacen_id_foreign` (`almacen_id`);
-
---
--- Indices de la tabla `inv_movimientos`
---
-ALTER TABLE `inv_movimientos`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `inv_movimientos_almacen_origen_id_foreign` (`almacen_origen_id`),
-  ADD KEY `inv_movimientos_almacen_destino_id_foreign` (`almacen_destino_id`),
-  ADD KEY `inv_movimientos_material_id_fecha_index` (`material_id`,`fecha`),
-  ADD KEY `inv_movimientos_empresa_id_index` (`empresa_id`);
-
---
--- Indices de la tabla `jobs`
---
-ALTER TABLE `jobs`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `jobs_queue_index` (`queue`);
-
---
--- Indices de la tabla `job_batches`
---
-ALTER TABLE `job_batches`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indices de la tabla `materiales`
---
-ALTER TABLE `materiales`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `materiales_sku_unique` (`sku`),
-  ADD UNIQUE KEY `materiales_empresa_codigo_unique` (`empresa_id`,`codigo`),
-  ADD UNIQUE KEY `materiales_empresa_descripcion_unique` (`empresa_id`,`descripcion`),
-  ADD KEY `materiales_unidad_id_foreign` (`unidad_id`),
-  ADD KEY `materiales_clase_construccion_id_foreign` (`clase_construccion_id`),
-  ADD KEY `materiales_empresa_id_index` (`empresa_id`),
-  ADD KEY `materiales_empresa_id_codigo_index` (`empresa_id`,`codigo`);
-
---
--- Indices de la tabla `migrations`
---
-ALTER TABLE `migrations`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indices de la tabla `model_has_permissions`
---
-ALTER TABLE `model_has_permissions`
-  ADD PRIMARY KEY (`permission_id`,`model_id`,`model_type`),
-  ADD KEY `model_has_permissions_model_id_model_type_index` (`model_id`,`model_type`);
-
---
--- Indices de la tabla `model_has_roles`
---
-ALTER TABLE `model_has_roles`
-  ADD PRIMARY KEY (`role_id`,`model_id`,`model_type`),
-  ADD KEY `model_has_roles_model_id_model_type_index` (`model_id`,`model_type`);
-
---
--- Indices de la tabla `password_reset_tokens`
---
-ALTER TABLE `password_reset_tokens`
-  ADD PRIMARY KEY (`email`);
-
---
--- Indices de la tabla `permissions`
---
-ALTER TABLE `permissions`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `permissions_name_guard_name_unique` (`name`,`guard_name`);
-
---
--- Indices de la tabla `proyectos`
---
-ALTER TABLE `proyectos`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `proyectos_empresa_id_estado_index` (`empresa_id`,`estado`),
-  ADD KEY `proyectos_empresa_id_codigo_index` (`empresa_id`,`codigo`);
-
---
--- Indices de la tabla `roles`
---
-ALTER TABLE `roles`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `roles_name_guard_name_unique` (`name`,`guard_name`);
-
---
--- Indices de la tabla `role_has_permissions`
---
-ALTER TABLE `role_has_permissions`
-  ADD PRIMARY KEY (`permission_id`,`role_id`),
-  ADD KEY `role_has_permissions_role_id_foreign` (`role_id`);
-
---
--- Indices de la tabla `sessions`
---
-ALTER TABLE `sessions`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `sessions_user_id_index` (`user_id`),
-  ADD KEY `sessions_last_activity_index` (`last_activity`);
-
---
--- Indices de la tabla `unidades`
---
-ALTER TABLE `unidades`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `unidades_codigo_unique` (`codigo`);
-
---
--- Indices de la tabla `users`
---
-ALTER TABLE `users`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `users_email_unique` (`email`),
-  ADD KEY `users_empresa_id_foreign` (`empresa_id`);
-
---
--- AUTO_INCREMENT de las tablas volcadas
---
-
---
--- AUTO_INCREMENT de la tabla `almacenes`
---
-ALTER TABLE `almacenes`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
-
---
--- AUTO_INCREMENT de la tabla `clases_construccion`
---
-ALTER TABLE `clases_construccion`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT de la tabla `empresas`
---
-ALTER TABLE `empresas`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
--- AUTO_INCREMENT de la tabla `failed_jobs`
---
-ALTER TABLE `failed_jobs`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT de la tabla `inv_existencias`
---
-ALTER TABLE `inv_existencias`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-
---
--- AUTO_INCREMENT de la tabla `inv_movimientos`
---
-ALTER TABLE `inv_movimientos`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
-
---
--- AUTO_INCREMENT de la tabla `jobs`
---
-ALTER TABLE `jobs`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT de la tabla `materiales`
---
-ALTER TABLE `materiales`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-
---
--- AUTO_INCREMENT de la tabla `migrations`
---
-ALTER TABLE `migrations`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
-
---
--- AUTO_INCREMENT de la tabla `permissions`
---
-ALTER TABLE `permissions`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
-
---
--- AUTO_INCREMENT de la tabla `proyectos`
---
-ALTER TABLE `proyectos`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT de la tabla `roles`
---
-ALTER TABLE `roles`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-
---
--- AUTO_INCREMENT de la tabla `unidades`
---
-ALTER TABLE `unidades`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
-
---
--- AUTO_INCREMENT de la tabla `users`
---
-ALTER TABLE `users`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+(1, NULL, 'Super Admin', 'superadmin@crm.local', NULL, '$2y$12$ppok5p7THLTZGTEm9yLH5OCivDObb2wmg6dqZ2CaPvq0PGK3Rd8K2', 1, 'KastNFPiy2Gs8eMx8O7Sy6z81LGqSF47kzvf85x2L01KYM6yRCqpJKAOmcPu', '2025-12-30 09:33:38', '2025-12-30 09:33:38'),
+(2, 1, 'Adan Noel', 'admin@evadan.com', NULL, '$2y$12$wg/lOuklv4vjZ3Je2wQG3uNhnTf8oUc2qkPSPsMunjHBnrTfM69LK', 1, 'dKTkcYKwaj7BAAmPu6iu1IWWNrXahKkWxLiX7RCflgZ75D74DhGf99Hp89rR', '2025-12-31 06:15:16', '2025-12-31 07:43:39'),
+(3, 1, 'Eva Smith', 'supervisor@evadan.com', NULL, '$2y$12$wKVrYhSawGQUbSdJAobeOe7xK8xeVVnWyEUTVZoSZ/NBqrXbB1vea', 1, 'v2V5UQ5tdQNSCTSwErPUIcdfecKokiciDLLoAU0C0LKAmQhHSXPoByfRxvk4', '2025-12-31 08:38:21', '2026-01-08 04:29:57'),
+(4, 2, 'Carlos Javier', 'admin@suplidorajc.com', NULL, '$2y$12$K.K3qDBXWpw2lzQEZtEU8O3isrmA7zLdtuaZ85C6q/vzzO2cp1ZFa', 1, 'xXwwtnxOyINwPnJje6XnPimuPHpENknucRGrLS5dn1rK5YRPiptDamWguD4a', '2026-01-11 07:13:44', '2026-01-11 07:58:37');
 
 --
 -- Restricciones para tablas volcadas

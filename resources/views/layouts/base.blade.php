@@ -11,12 +11,19 @@
 </head>
 
 <body class="min-h-screen bg-gradient-to-b from-indigo-50 via-slate-50 to-slate-100 text-slate-900">
-@php $user = auth()->user(); @endphp
+@php
+  use App\Support\EmpresaScope;
 
-{{-- ✅ Wrapper principal (evita “reventar” sticky + overflow) --}}
+  $user = auth()->user();
+  $isSuperAdmin = $user && $user->hasRole('Super Admin');
+
+  $empresaCtxId = EmpresaScope::getId();
+  $hasCtx = EmpresaScope::has();
+@endphp
+
 <div class="min-h-screen w-full flex overflow-hidden">
 
-  {{-- SIDEBAR (solo si autenticado) --}}
+  {{-- SIDEBAR --}}
   @auth
     @include('partials.sidebar')
   @endauth
@@ -24,6 +31,7 @@
   {{-- MAIN --}}
   <main class="flex-1 min-w-0 flex flex-col">
 
+    {{-- HEADER --}}
     <header class="sticky top-0 z-20 bg-white/70 backdrop-blur border-b border-slate-900/10">
       <div class="h-16 px-4 lg:px-6 flex items-center justify-between gap-3 min-w-0">
 
@@ -32,6 +40,22 @@
         </div>
 
         <div class="flex items-center gap-3 shrink-0">
+
+          {{-- Badges Super Admin --}}
+          @if($isSuperAdmin)
+            <div class="hidden md:flex items-center gap-2">
+              <span class="text-xs font-extrabold px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+                Modo Super Admin
+              </span>
+
+              <span class="text-xs font-extrabold px-3 py-1 rounded-full border
+                {{ $hasCtx ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-amber-50 text-amber-700 border-amber-100' }}">
+                Contexto: {{ $hasCtx ? 'Empresa seleccionada' : 'Todas' }}
+              </span>
+            </div>
+          @endif
+
+          {{-- User pill --}}
           @auth
             <div class="hidden sm:flex items-center gap-3 bg-white border border-slate-900/10 rounded-full px-3 py-1 shadow-sm">
               <div class="w-8 h-8 rounded-full bg-indigo-600 text-white grid place-items-center font-bold">
@@ -51,12 +75,13 @@
               </button>
             </form>
           @endauth
+
         </div>
 
       </div>
     </header>
 
-    {{-- ✅ El scroll/overflow debe vivir aquí, no en <main> --}}
+    {{-- CONTENT --}}
     <div class="flex-1 p-4 lg:p-6 w-full min-w-0 overflow-x-hidden">
       @yield('content')
     </div>
