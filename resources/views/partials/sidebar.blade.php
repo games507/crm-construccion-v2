@@ -19,6 +19,9 @@
       if($name==='cube') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 7.5 12 12.75 3 7.5m18 0-9-5.25L3 7.5m18 0v9.75A2.25 2.25 0 0 1 19.875 19.2L12 23.25 4.125 19.2A2.25 2.25 0 0 1 3 17.25V7.5" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
       if($name==='chev') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="m19.5 8.25-7.5 7.5-7.5-7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
+      // ✅ Proyectos (folder)
+      if($name==='folder') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3.75 7.5A2.25 2.25 0 0 1 6 5.25h4.5l1.5 1.5H18A2.25 2.25 0 0 1 20.25 9v8.25A2.25 2.25 0 0 1 18 19.5H6A2.25 2.25 0 0 1 3.75 17.25V7.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
+
       // inventario
       if($name==='list') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M8.25 6.75h12m-12 5.25h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm0 5.25h.007v.008H3.75V12Zm0 5.25h.007v.008H3.75v-.008Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
       if($name==='arrows') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7.5 7.5h12m0 0-3-3m3 3-3 3M16.5 16.5h-12m0 0 3 3m-3-3 3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -71,6 +74,7 @@
 
     $invActive   = $starts('inventario');
     $adminActive = $starts('admin');
+    $proyActive  = request()->routeIs('admin.proyectos*');
 
     // =========================
     // VISIBILIDAD DE MENÚS
@@ -114,6 +118,15 @@
     $canInventario = $isSuperAdmin
       ? $hasCtx
       : $canInventarioPorPermiso;
+
+    /**
+     * ✅ Proyectos:
+     * - SuperAdmin => SOLO si tiene contexto (si no, el controller da 403)
+     * - No superadmin => por permiso proyectos.ver
+     */
+    $canProyectos = $isSuperAdmin
+      ? $hasCtx
+      : ($user && $user->can('proyectos.ver'));
 
     // Logo empresa (solo NO superadmin)
     $logoPath = (string) ($empresa?->logo_path ?? '');
@@ -232,6 +245,54 @@
       <span x-show="!$store.sidebar.collapsed" x-transition.opacity.duration.150ms class="truncate">Dashboard</span>
     </a>
 
+    {{-- ✅ PROYECTOS (MENÚ PRINCIPAL) --}}
+    @if($canProyectos)
+      <div class="pt-2">
+        <button type="button"
+          class="w-full group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-extrabold transition
+                 {{ $proyActive ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900' }}"
+          :class="$store.sidebar.collapsed ? 'justify-center' : ''"
+          @click="toggleGroup('proyectos')"
+          title="Proyectos"
+        >
+          <span class="h-5 w-5 shrink-0 {{ $proyActive ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-900' }}">
+            {!! $icon('folder') !!}
+          </span>
+
+          <span class="flex-1 text-left" x-show="!$store.sidebar.collapsed" x-transition.opacity.duration.150ms>
+            Proyectos
+          </span>
+
+          <span x-show="!$store.sidebar.collapsed" class="h-5 w-5 text-slate-400 transition-transform"
+                :class="open.proyectos ? 'rotate-180' : ''">
+            {!! $icon('chev') !!}
+          </span>
+        </button>
+
+        <div x-show="open.proyectos && !$store.sidebar.collapsed"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 -translate-y-1"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 -translate-y-1"
+             class="mt-1 pl-4">
+          <div class="border-l border-slate-200 pl-3 space-y-1">
+
+            <a href="{{ route('admin.proyectos') }}"
+               class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
+                      {{ request()->routeIs('admin.proyectos*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+              <span class="h-4 w-4 {{ request()->routeIs('admin.proyectos*') ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
+                {!! $icon('folder') !!}
+              </span>
+              <span>Listado</span>
+            </a>
+
+          </div>
+        </div>
+      </div>
+    @endif
+
     {{-- SUPER ADMIN (ADMIN GLOBAL) --}}
     @if($isSuperAdmin)
       <div class="pt-2">
@@ -267,60 +328,41 @@
           <div class="border-l border-slate-200 pl-3 space-y-1">
 
             {{-- ✅ SuperAdmin SIEMPRE ve estos links --}}
-            @if($isSuperAdmin || ($user && $user->can('empresas.ver')))
-              <a href="{{ route('admin.empresas') }}"
-                 class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
-                        {{ request()->routeIs('admin.empresas*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-                <span class="h-4 w-4 {{ request()->routeIs('admin.empresas*') ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
-                  {!! $icon('building') !!}
-                </span>
-                <span>Empresas</span>
-              </a>
-            @endif
+            <a href="{{ route('admin.empresas') }}"
+               class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
+                      {{ request()->routeIs('admin.empresas*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+              <span class="h-4 w-4 {{ request()->routeIs('admin.empresas*') ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
+                {!! $icon('building') !!}
+              </span>
+              <span>Empresas</span>
+            </a>
 
-            @if($isSuperAdmin || ($user && $user->can('proyectos.ver')))
-              <a href="{{ route('admin.proyectos') }}"
-                 class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
-                        {{ request()->routeIs('admin.proyectos*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-                <span class="h-4 w-4 {{ request()->routeIs('admin.proyectos*') ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
-                  {!! $icon('box') !!}
-                </span>
-                <span>Proyectos</span>
-              </a>
-            @endif
+            <a href="{{ route('admin.usuarios') }}"
+               class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
+                      {{ request()->routeIs('admin.usuarios*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+              <span class="h-4 w-4 {{ request()->routeIs('admin.usuarios*') ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
+                {!! $icon('users') !!}
+              </span>
+              <span>Usuarios</span>
+            </a>
 
-            @if($isSuperAdmin || ($user && $user->can('usuarios.ver')))
-              <a href="{{ route('admin.usuarios') }}"
-                 class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
-                        {{ request()->routeIs('admin.usuarios*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-                <span class="h-4 w-4 {{ request()->routeIs('admin.usuarios*') ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
-                  {!! $icon('users') !!}
-                </span>
-                <span>Usuarios</span>
-              </a>
-            @endif
+            <a href="{{ route('admin.roles') }}"
+               class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
+                      {{ request()->routeIs('admin.roles*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+              <span class="h-4 w-4 {{ request()->routeIs('admin.roles*') ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
+                {!! $icon('roles') !!}
+              </span>
+              <span>Roles</span>
+            </a>
 
-            @if($isSuperAdmin || ($user && $user->can('roles.ver')))
-              <a href="{{ route('admin.roles') }}"
-                 class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
-                        {{ request()->routeIs('admin.roles*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-                <span class="h-4 w-4 {{ request()->routeIs('admin.roles*') ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
-                  {!! $icon('roles') !!}
-                </span>
-                <span>Roles</span>
-              </a>
-            @endif
-
-            @if($isSuperAdmin || ($user && $user->can('permisos.ver')))
-              <a href="{{ route('admin.permisos') }}"
-                 class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
-                        {{ request()->routeIs('admin.permisos*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-                <span class="h-4 w-4 {{ request()->routeIs('admin.permisos*') ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
-                  {!! $icon('key') !!}
-                </span>
-                <span>Permisos</span>
-              </a>
-            @endif
+            <a href="{{ route('admin.permisos') }}"
+               class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
+                      {{ request()->routeIs('admin.permisos*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+              <span class="h-4 w-4 {{ request()->routeIs('admin.permisos*') ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
+                {!! $icon('key') !!}
+              </span>
+              <span>Permisos</span>
+            </a>
 
           </div>
         </div>

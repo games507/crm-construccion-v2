@@ -3,149 +3,217 @@
 
 @section('content')
 @php
-  $q = $q ?? request('q','');
-  $empresaId = $empresaId ?? request('empresa_id','');
-  $estado = $estado ?? request('estado','');
-  $soloActivos = $soloActivos ?? request('solo_activos','');
+  $qVal = trim((string) request('q', ''));
+  $estadoVal = trim((string) request('estado', ''));
 @endphp
 
-<div class="card" style="max-width:1100px;margin:0 auto;">
+<div class="max-w-7xl mx-auto">
 
-  <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start;">
+  {{-- Header --}}
+  <div class="flex flex-wrap items-start justify-between gap-3">
     <div>
-      <h2 style="margin:0 0 6px 0;">Proyectos</h2>
-      <div style="color:#64748b;font-size:13px;">Gestión de proyectos por empresa, estado y vigencia.</div>
+      <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Proyectos</h1>
+      <p class="text-sm text-slate-500 mt-1">
+        Administra proyectos de tu empresa (código, nombre, ubicación, estado, fechas y presupuesto).
+      </p>
     </div>
 
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-      <form method="GET" action="{{ route('admin.proyectos') }}" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-        <div class="input-wrap" style="min-width:260px;">
-          <div class="input-ico">Q</div>
-          <input class="input" name="q" value="{{ $q }}" placeholder="Buscar por código, nombre, ubicación, estado">
-        </div>
-
-        @can('empresas.ver')
-          <div class="select-wrap" style="min-width:240px;">
-            <div class="select-icon">E</div>
-            <select name="empresa_id">
-              <option value="">— Todas las empresas —</option>
-              @foreach($empresas as $e)
-                <option value="{{ $e->id }}" @selected((string)$empresaId === (string)$e->id)>{{ $e->nombre }}</option>
-              @endforeach
-            </select>
-          </div>
-        @endcan
-
-        <div class="select-wrap" style="min-width:210px;">
-          <div class="select-icon">S</div>
-          <select name="estado">
-            <option value="">— Todos los estados —</option>
-            @foreach(['Planificado','En Progreso','En Pausa','Finalizado','Cancelado'] as $st)
-              <option value="{{ $st }}" @selected((string)$estado === (string)$st)>{{ $st }}</option>
-            @endforeach
-          </select>
-        </div>
-
-        <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid rgba(15,23,42,.12);border-radius:12px;background:#fff;box-shadow:0 10px 24px rgba(2,6,23,.06);height:44px;">
-          <input type="checkbox" name="solo_activos" value="1" {{ $soloActivos ? 'checked' : '' }}>
-          <span style="font-weight:700;font-size:13px;">Solo activos</span>
-        </label>
-
-        <button class="btn btn-outline" type="submit">Filtrar</button>
-      </form>
-
+    <div class="flex gap-2 flex-wrap">
       @can('proyectos.crear')
-        <a class="btn" href="{{ route('admin.proyectos.create') }}">+ Nuevo Proyecto</a>
+        <a href="{{ route('admin.proyectos.create') }}"
+           class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold
+                  bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
+          + Nuevo proyecto
+        </a>
       @endcan
     </div>
   </div>
 
-  @if(session('ok'))
-    <div class="alert" style="margin-top:14px;border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.06);color:#14532d;">
-      {{ session('ok') }}
+  {{-- Alerts --}}
+  @if (session('ok'))
+    <div class="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800">
+      ✅ {{ session('ok') }}
     </div>
   @endif
 
-  @if ($errors->any())
-    <div class="alert" style="margin-top:14px;">{{ $errors->first() }}</div>
+  @if (session('err'))
+    <div class="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-800">
+      ❌ {{ session('err') }}
+    </div>
   @endif
 
-  <div style="margin-top:14px;overflow:auto;border:1px solid rgba(15,23,42,.08);border-radius:14px;">
-    <table width="100%" cellpadding="10" style="border-collapse:collapse;min-width:1050px;">
-      <thead>
-        <tr style="background:rgba(2,6,23,.03);text-align:left;">
-          <th style="padding:12px;border-bottom:1px solid rgba(15,23,42,.08);">Proyecto</th>
-          <th style="padding:12px;border-bottom:1px solid rgba(15,23,42,.08);">Empresa</th>
-          <th style="padding:12px;border-bottom:1px solid rgba(15,23,42,.08);">Estado</th>
-          <th style="padding:12px;border-bottom:1px solid rgba(15,23,42,.08);">Fechas</th>
-          <th style="padding:12px;border-bottom:1px solid rgba(15,23,42,.08);">Activo</th>
-          <th style="padding:12px;border-bottom:1px solid rgba(15,23,42,.08);">Acciones</th>
-        </tr>
-      </thead>
+  {{-- Filtros --}}
+  <form method="GET" action="{{ route('admin.proyectos') }}"
+        class="mt-5 rounded-2xl border border-slate-900/10 bg-white shadow-sm p-4">
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
 
-      <tbody>
-        @forelse($proyectos as $p)
-          @php
-            $badgeBg = match($p->estado){
-              'Planificado' => 'rgba(99,102,241,.10)',
-              'En Progreso' => 'rgba(34,197,94,.10)',
-              'En Pausa'    => 'rgba(234,179,8,.10)',
-              'Finalizado'  => 'rgba(14,165,233,.10)',
-              'Cancelado'   => 'rgba(239,68,68,.10)',
-              default       => 'rgba(148,163,184,.12)'
-            };
-          @endphp
-          <tr style="border-bottom:1px solid rgba(15,23,42,.06);">
-            <td style="padding:12px;">
-              <div style="font-weight:900;">
-                {{ $p->codigo ? $p->codigo.' — ' : '' }}{{ $p->nombre }}
-              </div>
-              <div style="color:#64748b;font-size:12px;">{{ $p->ubicacion ?: '—' }}</div>
-            </td>
+      <div class="md:col-span-7">
+        <label class="text-xs font-semibold text-slate-500">Buscar</label>
+        <input name="q" value="{{ $qVal }}" placeholder="Código, nombre o ubicación…"
+               class="mt-2 w-full h-11 rounded-xl border border-slate-900/10 px-3 bg-white
+                      focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 outline-none">
+      </div>
 
-            <td style="padding:12px;">
-              {{ $p->empresa?->nombre ?? '—' }}
-            </td>
+      <div class="md:col-span-3">
+        <label class="text-xs font-semibold text-slate-500">Estado</label>
+        <select name="estado"
+                class="mt-2 w-full h-11 rounded-xl border border-slate-900/10 px-3 bg-white
+                       focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 outline-none">
+          <option value="">Todos</option>
+          <option value="planeado" @selected($estadoVal==='planeado')>Planeado</option>
+          <option value="en_ejecucion" @selected($estadoVal==='en_ejecucion')>En ejecución</option>
+          <option value="pausado" @selected($estadoVal==='pausado')>Pausado</option>
+          <option value="finalizado" @selected($estadoVal==='finalizado')>Finalizado</option>
+        </select>
+      </div>
 
-            <td style="padding:12px;">
-              <span style="display:inline-flex;padding:6px 10px;border-radius:999px;font-weight:900;font-size:12px;
-                background:{{ $badgeBg }};border:1px solid rgba(15,23,42,.10);">
-                {{ $p->estado }}
-              </span>
-            </td>
+      <div class="md:col-span-2 flex items-end gap-2 justify-end">
+        <button type="submit"
+                class="inline-flex items-center justify-center rounded-xl px-4 h-11 text-sm font-semibold
+                       bg-slate-900 text-white hover:bg-slate-800">
+          Filtrar
+        </button>
 
-            <td style="padding:12px;color:#64748b;">
-              <div><b>Inicio:</b> {{ $p->fecha_inicio?->format('Y-m-d') ?? '—' }}</div>
-              <div><b>Fin:</b> {{ $p->fecha_fin?->format('Y-m-d') ?? '—' }}</div>
-            </td>
+        @if($qVal !== '' || $estadoVal !== '')
+          <a href="{{ route('admin.proyectos') }}"
+             class="inline-flex items-center justify-center rounded-xl px-4 h-11 text-sm font-semibold
+                    bg-white border border-slate-900/10 hover:border-slate-900/20 shadow-sm">
+            Limpiar
+          </a>
+        @endif
+      </div>
 
-            <td style="padding:12px;">
-              <span style="display:inline-flex;padding:6px 10px;border-radius:999px;font-weight:900;font-size:12px;
-                background:{{ $p->activo ? 'rgba(34,197,94,.10)' : 'rgba(239,68,68,.10)' }};
-                border:1px solid rgba(15,23,42,.10);">
-                {{ $p->activo ? 'ACTIVO' : 'INACTIVO' }}
-              </span>
-            </td>
+      <div class="md:col-span-12 text-xs text-slate-500 flex justify-end">
+        <div class="text-right">
+          <div class="font-semibold text-slate-700">Registros</div>
+          <div>{{ $proyectos->total() }}</div>
+        </div>
+      </div>
 
-            <td style="padding:12px;">
-              @can('proyectos.editar')
-                <a class="btn btn-outline" href="{{ route('admin.proyectos.edit',$p) }}">Editar</a>
-              @else
-                —
-              @endcan
-            </td>
+    </div>
+  </form>
+
+  {{-- Tabla --}}
+  <div class="mt-5 rounded-2xl border border-slate-900/10 bg-white shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead class="bg-slate-50 text-slate-600">
+          <tr class="text-left">
+            <th class="px-4 py-3 font-semibold">Código</th>
+            <th class="px-4 py-3 font-semibold">Proyecto</th>
+            <th class="px-4 py-3 font-semibold">Estado</th>
+            <th class="px-4 py-3 font-semibold">Fechas</th>
+            <th class="px-4 py-3 font-semibold text-right">Presupuesto</th>
+            <th class="px-4 py-3 font-semibold text-right">Acciones</th>
           </tr>
-        @empty
-          <tr><td colspan="6" style="padding:14px;color:#64748b;">No hay proyectos.</td></tr>
-        @endforelse
-      </tbody>
-    </table>
+        </thead>
+
+        <tbody class="divide-y divide-slate-100">
+          @forelse($proyectos as $p)
+            @php
+              $estado = (string) ($p->estado ?? '');
+              $estadoLabel = $estado ? ucfirst(str_replace('_',' ', $estado)) : '—';
+
+              $badge = match($estado) {
+                'planeado'     => 'bg-slate-100 text-slate-700 border-slate-200',
+                'en_ejecucion' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
+                'pausado'      => 'bg-amber-50 text-amber-700 border-amber-200',
+                'finalizado'   => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                default        => 'bg-slate-100 text-slate-700 border-slate-200',
+              };
+            @endphp
+
+            <tr class="hover:bg-slate-50/60">
+              <td class="px-4 py-3 font-extrabold text-slate-900">{{ $p->codigo ?? '—' }}</td>
+
+              <td class="px-4 py-3">
+                <div class="font-semibold text-slate-900">{{ $p->nombre }}</div>
+                <div class="text-xs text-slate-500 mt-1">
+                  {{ $p->ubicacion ?? '—' }}
+                </div>
+
+                @if((int)($p->activo ?? 1) !== 1)
+                  <div class="mt-2">
+                    <span class="inline-flex items-center rounded-full bg-red-50 text-red-700 px-3 py-1 text-xs font-bold border border-red-200">
+                      Inactivo
+                    </span>
+                  </div>
+                @endif
+              </td>
+
+              <td class="px-4 py-3">
+                <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-bold border {{ $badge }}">
+                  {{ $estadoLabel }}
+                </span>
+              </td>
+
+              <td class="px-4 py-3 text-slate-700">
+                <div class="text-xs">
+                  <div><span class="font-semibold text-slate-700">Inicio:</span> {{ $p->fecha_inicio?->format('Y-m-d') ?? '—' }}</div>
+                  <div><span class="font-semibold text-slate-700">Fin:</span> {{ $p->fecha_fin?->format('Y-m-d') ?? '—' }}</div>
+                </div>
+              </td>
+
+              <td class="px-4 py-3 text-right font-extrabold text-slate-900 whitespace-nowrap">
+                {{ number_format((float)($p->presupuesto ?? 0), 2, '.', ',') }}
+              </td>
+
+              <td class="px-4 py-3 text-right whitespace-nowrap">
+                <div class="inline-flex items-center gap-1">
+
+                  @can('proyectos.editar')
+                    <a href="{{ route('admin.proyectos.edit', $p->id) }}"
+                       title="Editar proyecto"
+                       class="inline-flex items-center justify-center h-9 w-9 rounded-lg
+                              border border-slate-900/10 bg-white
+                              text-slate-600 hover:text-indigo-700 hover:border-indigo-200
+                              hover:bg-indigo-50 transition">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
+                           fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M16.862 4.487a2.25 2.25 0 1 1 3.182 3.182L7.5 20.213 3 21l.787-4.5L16.862 4.487Z"/>
+                      </svg>
+                    </a>
+                  @endcan
+
+                  {{-- si luego agregas eliminar proyectos, te lo dejo listo:
+                  @can('proyectos.eliminar')
+                    <form action="{{ route('admin.proyectos.destroy',$p->id) }}" method="POST"
+                          onsubmit="return confirm('¿Eliminar este proyecto?');">
+                      @csrf
+                      @method('DELETE')
+                      <button type="submit" title="Eliminar proyecto"
+                              class="inline-flex items-center justify-center h-9 w-9 rounded-lg
+                                     border border-red-200 bg-red-50
+                                     text-red-600 hover:bg-red-100 hover:border-red-300 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
+                             fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                          <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M6 7.5h12m-9 3v6m6-6v6M9 3.75h6a1.5 1.5 0 0 1 1.5 1.5V7.5h-9V5.25A1.5 1.5 0 0 1 9 3.75Z"/>
+                        </svg>
+                      </button>
+                    </form>
+                  @endcan
+                  --}}
+
+                </div>
+              </td>
+            </tr>
+          @empty
+            <tr>
+              <td class="px-4 py-10 text-center text-slate-500" colspan="6">
+                No hay proyectos para los filtros seleccionados.
+              </td>
+            </tr>
+          @endforelse
+        </tbody>
+      </table>
+    </div>
   </div>
 
-  <div style="margin-top:14px;">
-    @if(method_exists($proyectos,'links'))
-      {{ $proyectos->links() }}
-    @endif
+  {{-- Paginación --}}
+  <div class="mt-4">
+    {{ $proyectos->links() }}
   </div>
 
 </div>

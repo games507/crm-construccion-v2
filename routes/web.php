@@ -5,7 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 
-use App\Http\Controllers\InventarioExistenciasController;
+// ✅ FIX: estaba mal el namespace
+use App\Http\Controllers\Inventario\InventarioExistenciasController;
 
 use App\Http\Controllers\Inventario\AlmacenController;
 use App\Http\Controllers\Inventario\MaterialController;

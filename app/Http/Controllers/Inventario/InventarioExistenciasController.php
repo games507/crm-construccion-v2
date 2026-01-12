@@ -1,15 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Inventario;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
-/**
- * IMPORTANTE:
- * - Para usuarios normales, la empresa sale de auth()->user()->empresa_id
- * - Para Super Admin, la empresa seleccionada sale de EmpresaScope (sesión)
- */
 use App\Support\EmpresaScope;
 
 class InventarioExistenciasController extends Controller
@@ -17,15 +12,9 @@ class InventarioExistenciasController extends Controller
     /**
      * EMPRESA ACTUAL (FIX)
      *
-     * Antes: solo leía auth()->user()->empresa_id
-     * Problema: Super Admin normalmente tiene empresa_id = 0/null => 403
-     *
-     * Ahora:
      * 1) Si existe EmpresaScope (super admin eligió empresa) => usamos esa
      * 2) Si no, caemos al empresa_id del usuario (usuarios normales)
      * 3) Si ninguna existe => 403 con mensaje claro
-     *
-     * Copia este mismo patrón en tus otros controllers (Almacen, Material, Movimientos, Kardex, etc.)
      */
     private function empresaIdOrAbort(): int
     {
@@ -42,8 +31,6 @@ class InventarioExistenciasController extends Controller
 
         // 4) si no hay empresa, bloquear con mensaje correcto
         if ($empresaId <= 0) {
-            // Nota: aquí puedes poner un mensaje más específico si quieres:
-            // - "Seleccione una empresa para continuar."
             abort(403, 'Seleccione una empresa para continuar.');
         }
 
@@ -60,7 +47,6 @@ class InventarioExistenciasController extends Controller
      */
     public function api(Request $request)
     {
-        // FIX aplicado aquí (empresa sale de Scope o del usuario)
         $empresaId = $this->empresaIdOrAbort();
 
         $q = trim((string) $request->query('q', ''));
@@ -100,25 +86,18 @@ class InventarioExistenciasController extends Controller
                 'm.id as material_id',
                 'a.id as almacen_id',
 
-                // En tu BD no hay "nombre", usamos el codigo como material principal
                 DB::raw('COALESCE(m.codigo, "") as material'),
                 DB::raw('COALESCE(m.codigo, "") as codigo'),
                 DB::raw('COALESCE(m.sku, "") as sku'),
 
-                // no existe categoria -> devolvemos vacío
                 DB::raw('"" as categoria'),
 
-                // almacén
                 DB::raw('COALESCE(a.codigo, "") as almacen_codigo'),
                 DB::raw('COALESCE(a.nombre, "") as almacen'),
 
-                // existencia: usamos stock (tu columna real)
                 DB::raw('COALESCE(e.stock, 0) as existencia'),
-
-                // mínimo no existe en tu tabla -> 0
                 DB::raw('0 as minimo'),
 
-                // extras útiles
                 DB::raw('COALESCE(m.descripcion, "") as descripcion'),
                 DB::raw('COALESCE(m.unidad, "") as unidad'),
                 DB::raw('COALESCE(e.costo_promedio, 0) as costo_promedio'),

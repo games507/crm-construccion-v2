@@ -12,21 +12,12 @@ use App\Support\EmpresaScope;
 
 class MaterialController extends Controller
 {
-    /**
-     * PATRÓN ÚNICO PARA EMPRESA (CÓPIALO EN LOS DEMÁS)
-     *
-     * 1) Si hay contexto seleccionado (EmpresaScope::getId) -> úsalo (Super Admin)
-     * 2) Si no hay contexto -> usa empresa_id del usuario (usuario normal)
-     * 3) Si ambos son 0 -> 403 (mensaje claro)
-     *
-     * OJO: así NO dependes del nombre exacto del rol ("Super Admin" vs "SuperAdmin").
-     */
     private function empresaIdOrAbort(): int
     {
         $user = auth()->user();
 
-        $scopeEmpresaId = (int) EmpresaScope::getId();        // super admin cuando elige empresa
-        $userEmpresaId  = (int) ($user->empresa_id ?? 0);     // usuario normal
+        $scopeEmpresaId = (int) EmpresaScope::getId();
+        $userEmpresaId  = (int) ($user->empresa_id ?? 0);
 
         $empresaId = $scopeEmpresaId > 0 ? $scopeEmpresaId : $userEmpresaId;
 
@@ -48,7 +39,7 @@ class MaterialController extends Controller
     {
         $u = Unidad::query()->whereKey($unidadId)->first(['id','codigo','descripcion']);
         if (!$u) abort(422, 'Unidad inválida.');
-        return (string) $u->descripcion; // o $u->codigo si prefieres
+        return (string) $u->descripcion;
     }
 
     public function index(Request $r)
@@ -114,15 +105,12 @@ class MaterialController extends Controller
         $data['sku'] = 'E' . $empresaId . '-' . $codigo;
         $data['empresa_id'] = $empresaId;
 
-        // ACTIVO real (por defecto 1 al crear)
         $data['activo'] = (int) $r->input('activo', 1);
 
-        // costo a 2 decimales
         $data['costo_estandar'] = isset($data['costo_estandar'])
             ? round((float)$data['costo_estandar'], 2)
             : 0;
 
-        // evita colisión global de sku
         $skuExists = Material::query()->where('sku', $data['sku'])->exists();
         if ($skuExists) {
             $data['sku'] = $data['sku'] . '-' . strtoupper(substr(uniqid(), -4));
@@ -171,14 +159,13 @@ class MaterialController extends Controller
             ],
             'unidad_id' => ['required','integer','exists:unidades,id'],
             'costo_estandar' => ['nullable','numeric','min:0'],
-            'activo' => ['required','in:0,1'], // requiere 0/1 (usa hidden + checkbox en blade)
+            'activo' => ['required','in:0,1'],
         ]);
 
         $codigo = trim((string)$data['codigo']);
 
         $data['unidad'] = $this->unidadTextoFromId((int)$data['unidad_id']);
 
-        // SKU por empresa + código
         $nuevoSku = 'E' . $empresaId . '-' . $codigo;
 
         $skuExists = Material::query()
@@ -192,10 +179,8 @@ class MaterialController extends Controller
 
         $data['sku'] = $nuevoSku;
 
-        // ACTIVO real
         $data['activo'] = (int) $r->input('activo', 0);
 
-        // costo a 2 decimales
         $data['costo_estandar'] = isset($data['costo_estandar'])
             ? round((float)$data['costo_estandar'], 2)
             : 0;
@@ -216,10 +201,29 @@ class MaterialController extends Controller
         }
 
         try {
-            $material->delete();
-            return redirect()->route('inventario.materiales')->with('ok', 'Material eliminado.');
+            // ✅ BORRADO BLINDADO: solo 1 fila (id + empresa)
+            $deleted = Material::query()
+                ->whereKey($material->id)
+                ->where('empresa_id', $empresaId)
+                ->limit(1)
+                ->delete();
+
+            if ($deleted < 1) {
+                return redirect()
+                    ->route('inventario.materiales')
+                    ->with('err', 'No se pudo eliminar (no encontrado o fuera de tu empresa).');
+            }
+
+            return redirect()
+                ->route('inventario.materiales')
+                ->with('ok', 'Material eliminado.');
         } catch (QueryException $e) {
-            $material->update(['activo' => 0]);
+            // si tiene FK, lo marcamos inactivo
+            Material::query()
+                ->whereKey($material->id)
+                ->where('empresa_id', $empresaId)
+                ->limit(1)
+                ->update(['activo' => 0]);
 
             return redirect()
                 ->route('inventario.materiales')
