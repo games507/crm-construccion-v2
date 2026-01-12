@@ -27,17 +27,27 @@ use App\Http\Controllers\Admin\MiEmpresaController;
 
 /*
 |--------------------------------------------------------------------------
-| HOME
+| LANDING PÚBLICA
 |--------------------------------------------------------------------------
+| Ahora el home público es el landing.
 */
-Route::get('/', function () {
-    return redirect()->route('login');
+Route::view('/', 'landing')->name('landing');
+
+/*
+|--------------------------------------------------------------------------
+| (Opcional) Compatibilidad con home anterior
+|--------------------------------------------------------------------------
+| Si en algún lado tienes route('home'), lo dejamos.
+*/
+Route::get('/home', function () {
+    return redirect()->route('landing');
 })->name('home');
 
 /*
 |--------------------------------------------------------------------------
 | AUTH (GUEST)
 |--------------------------------------------------------------------------
+| Login se queda igual (/login) para no tocar nada existente.
 */
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'create'])->name('login');
@@ -55,10 +65,18 @@ Route::post('/logout', [LoginController::class, 'destroy'])
 
 /*
 |--------------------------------------------------------------------------
-| APP (AUTH)
+| APP (AUTH) TODO BAJO /app
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth'])->group(function () {
+Route::prefix('app')->middleware(['auth'])->group(function () {
+
+    /*
+    |--------------------------------------------------------------------------
+    | DASHBOARD / PORTAL INTERNO (HOME POST-LOGIN)
+    |--------------------------------------------------------------------------
+    | Mantengo el name('dashboard') para que NO se te rompan links existentes.
+    */
+    Route::get('/', DashboardController::class)->name('dashboard');
 
     /*
     |--------------------------------------------------------------------------
@@ -70,13 +88,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/admin/empresa-context/clear', [EmpresaContextController::class, 'clear'])
         ->name('admin.empresa_context.clear');
-
-    /*
-    |--------------------------------------------------------------------------
-    | DASHBOARD
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
     /*
     |--------------------------------------------------------------------------
@@ -215,7 +226,7 @@ Route::middleware(['auth'])->group(function () {
                 ->middleware('permission:permisos.eliminar')
                 ->name('permisos.destroy');
 
-            // PROYECTOS
+            // PROYECTOS (por ahora se queda aquí; lo sacamos del menú en el sidebar)
             Route::get('proyectos', [ProyectosController::class, 'index'])
                 ->middleware('permission:proyectos.ver')
                 ->name('proyectos');
@@ -328,3 +339,13 @@ Route::middleware(['auth'])->group(function () {
                 ->name('movimientos.store');
         });
 });
+
+/*
+|--------------------------------------------------------------------------
+| COMPATIBILIDAD: /dashboard viejo
+|--------------------------------------------------------------------------
+| Si alguien entra a /dashboard por costumbre, lo mandamos a /app
+*/
+Route::get('/dashboard', function () {
+    return redirect()->route('dashboard');
+})->middleware('auth');

@@ -1,158 +1,192 @@
-<!DOCTYPE html>
+{{-- resources/views/landing.blade.php --}}
+<!doctype html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Sistema integral para la gestión de proyectos de construcción: presupuestos, cronogramas, control de obra y colaboración en tiempo real.">
-    <title>ConstruApp – Gestión inteligente para constructores</title>
-    @vite('resources/css/app.css')
-    <!-- Puedes añadir Google Fonts si quieres -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ERP/CRM Municipal — Plataforma de Gestión</title>
+
+  @vite(['resources/css/app.css','resources/js/app.js'])
 </head>
-<body class="bg-white">
-    <!-- Hero Section -->
-    <div class="relative bg-gray-900 overflow-hidden">
-        <div class="max-w-7xl mx-auto">
-            <div class="relative z-10 pb-8 bg-gray-900 sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
-                <svg class="hidden lg:block absolute right-0 inset-y-0 h-full w-48 text-gray-900 transform translate-x-1/2" fill="currentColor" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-                    <polygon points="50,0 100,0 50,100 0,100" />
-                </svg>
 
-                <div class="pt-10 px-4 sm:px-6 lg:px-8">
-                    <nav class="relative flex items-center justify-between sm:h-10">
-                        <div class="flex items-center flex-shrink-0">
-                            <span class="text-white text-2xl font-bold">ConstruApp</span>
-                        </div>
-                        <div class="hidden md:block">
-                            <a href="{{ route('login') }}" class="text-base font-medium text-white hover:text-gray-300">Iniciar sesión</a>
-                        </div>
-                    </nav>
-                </div>
+<body class="min-h-screen bg-gradient-to-b from-indigo-50 via-slate-50 to-white text-slate-900">
 
-                <main class="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">
-                    <div class="sm:text-center lg:text-left">
-                        <h1 class="text-4xl tracking-tight font-extrabold text-white sm:text-5xl md:text-6xl">
-                            <span class="block">Gestiona tus obras</span>
-                            <span class="block text-blue-400">como un profesional</span>
-                        </h1>
-                        <p class="mt-3 text-base text-gray-300 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
-                            Sistema todo-en-uno para contratistas: presupuestos precisos, cronogramas, control de gastos y colaboración en tiempo real.
-                        </p>
-                        <div class="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
-                            <div class="rounded-md shadow">
-                                <a href="{{ route('register') }}" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10">
-                                    Comenzar gratis
-                                </a>
-                            </div>
-                            <div class="mt-3 sm:mt-0 sm:ml-3">
-                                <a href="#features" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-blue-400 bg-gray-800 hover:bg-gray-700 md:py-4 md:text-lg md:px-10">
-                                    Ver características
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </main>
+  {{-- Top bar --}}
+  <header class="sticky top-0 z-50 border-b border-slate-200/70 bg-white/70 backdrop-blur">
+    <div class="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-2xl bg-indigo-600 shadow-sm"></div>
+        <div>
+          <div class="font-black leading-tight">ERP/CRM Municipal</div>
+          <div class="text-xs text-slate-500 -mt-0.5">Gestión integral por módulos</div>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <a href="#modulos" class="hidden sm:inline-flex px-3 h-10 items-center rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100">
+          Módulos
+        </a>
+        <a href="#beneficios" class="hidden sm:inline-flex px-3 h-10 items-center rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-100">
+          Beneficios
+        </a>
+
+        <a href="{{ route('login') }}"
+           class="inline-flex items-center justify-center px-4 h-10 rounded-xl bg-indigo-600 text-white font-bold shadow-sm hover:bg-indigo-700">
+          Entrar al sistema
+        </a>
+      </div>
+    </div>
+  </header>
+
+  {{-- Hero --}}
+  <section class="mx-auto max-w-7xl px-4 py-12 sm:py-16">
+    <div class="grid lg:grid-cols-2 gap-10 items-center">
+      <div>
+        <h1 class="text-3xl sm:text-4xl font-black tracking-tight text-slate-900">
+          Plataforma moderna para administrar inventario, proyectos y operaciones municipales
+        </h1>
+        <p class="mt-4 text-slate-600 text-base sm:text-lg leading-relaxed">
+          Un sistema unificado con control por roles, trazabilidad, multi-empresa y paneles claros para agilizar el trabajo diario.
+        </p>
+
+        <div class="mt-6 flex flex-wrap gap-3">
+          <a href="{{ route('login') }}"
+             class="inline-flex items-center justify-center px-5 h-11 rounded-xl bg-indigo-600 text-white font-bold shadow-sm hover:bg-indigo-700">
+            Acceder / Iniciar sesión
+          </a>
+
+          <a href="#modulos"
+             class="inline-flex items-center justify-center px-5 h-11 rounded-xl bg-white text-slate-800 font-bold border border-slate-200 hover:bg-slate-50">
+            Ver módulos
+          </a>
+        </div>
+
+        <div class="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-3">
+          @foreach ([
+            ['Trazabilidad', 'Movimientos y auditoría'],
+            ['Multi-empresa', 'Contexto por empresa'],
+            ['Roles & permisos', 'Accesos controlados'],
+          ] as $b)
+            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div class="text-sm font-extrabold">{{ $b[0] }}</div>
+              <div class="text-xs text-slate-500 mt-1">{{ $b[1] }}</div>
             </div>
+          @endforeach
         </div>
-        <div class="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
-            <img class="h-56 w-full object-cover sm:h-72 md:h-96 lg:w-full lg:h-full" src="https://images.unsplash.com/photo-1504307651254-35680f32b326?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="Obra en construcción">
+      </div>
+
+      {{-- Mockup / card --}}
+      <div class="rounded-3xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(2,6,23,.10)] overflow-hidden">
+        <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+          <div class="font-black">Vista previa</div>
+          <div class="text-xs text-slate-500">Portal interno / Dashboard</div>
         </div>
+        <div class="p-6">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+              <div class="text-xs text-slate-500">Alertas</div>
+              <div class="mt-2 text-2xl font-black">8</div>
+              <div class="text-xs text-slate-500 mt-1">Stock bajo / vencimientos</div>
+            </div>
+            <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+              <div class="text-xs text-slate-500">Movimientos</div>
+              <div class="mt-2 text-2xl font-black">124</div>
+              <div class="text-xs text-slate-500 mt-1">Últimos 7 días</div>
+            </div>
+            <div class="col-span-2 rounded-2xl bg-slate-50 border border-slate-200 p-4">
+              <div class="text-xs text-slate-500">Actividad reciente</div>
+              <ul class="mt-2 space-y-2 text-sm">
+                <li class="flex justify-between"><span class="font-semibold">Entrada</span><span class="text-slate-500">Material X</span></li>
+                <li class="flex justify-between"><span class="font-semibold">Salida</span><span class="text-slate-500">Almacén Central</span></li>
+                <li class="flex justify-between"><span class="font-semibold">Proyecto</span><span class="text-slate-500">Actualización</span></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="mt-5 flex gap-3">
+            <div class="h-10 flex-1 rounded-xl bg-indigo-600"></div>
+            <div class="h-10 w-28 rounded-xl bg-slate-200"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  {{-- Módulos --}}
+  <section id="modulos" class="mx-auto max-w-7xl px-4 pb-14">
+    <div class="flex items-end justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-black">Módulos principales</h2>
+        <p class="text-slate-600 mt-1">Organizados para operación diaria y administración.</p>
+      </div>
     </div>
 
-    <!-- Features -->
-    <div id="features" class="py-12 bg-white sm:py-16 lg:py-20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="lg:text-center">
-                <h2 class="text-base text-blue-600 font-semibold tracking-wide uppercase">Características</h2>
-                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-                    Herramientas pensadas para constructores
-                </p>
-                <p class="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
-                    Todo lo que necesitas en una sola plataforma.
-                </p>
-            </div>
-
-            <div class="mt-10">
-                <dl class="space-y-10 md:space-y-0 md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-10">
-                    <div class="relative">
-                        <dt>
-                            <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white">
-                                💰
-                            </div>
-                            <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Presupuestos inteligentes</p>
-                        </dt>
-                        <dd class="mt-2 ml-16 text-base text-gray-500">
-                            Genera cotizaciones detalladas con base en precios actuales del mercado y materiales.
-                        </dd>
-                    </div>
-
-                    <div class="relative">
-                        <dt>
-                            <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white">
-                                🗓️
-                            </div>
-                            <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Cronogramas dinámicos</p>
-                        </dt>
-                        <dd class="mt-2 ml-16 text-base text-gray-500">
-                            Planifica etapas, asigna recursos y recibe alertas de retrasos automáticamente.
-                        </dd>
-                    </div>
-
-                    <div class="relative">
-                        <dt>
-                            <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white">
-                                📱
-                            </div>
-                            <p class="ml-16 text-lg leading-6 font-medium text-gray-900">App móvil incluida</p>
-                        </dt>
-                        <dd class="mt-2 ml-16 text-base text-gray-500">
-                            Registra avances, gastos e incidencias desde la obra, en tiempo real.
-                        </dd>
-                    </div>
-
-                    <div class="relative">
-                        <dt>
-                            <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white">
-                                👥
-                            </div>
-                            <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Colaboración en equipo</p>
-                        </dt>
-                        <dd class="mt-2 ml-16 text-base text-gray-500">
-                            Comparte información con tu equipo, proveedores y clientes sin salir de la plataforma.
-                        </dd>
-                    </div>
-                </dl>
-            </div>
+    <div class="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      @foreach ([
+        ['Inventario', 'Materiales, almacenes, kardex, movimientos y existencias.'],
+        ['Proyectos', 'Gestión y seguimiento de proyectos (módulo principal).'],
+        ['Usuarios / Roles', 'Accesos por perfil, permisos y auditoría.'],
+        ['Multi-empresa', 'Operación por empresa seleccionada (Super Admin).'],
+        ['Reportes', 'Indicadores, exportaciones y trazabilidad.'],
+        ['Configuración', 'Parámetros del sistema (solo admin).'],
+      ] as $m)
+        <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div class="text-lg font-black">{{ $m[0] }}</div>
+          <div class="text-sm text-slate-600 mt-2 leading-relaxed">{{ $m[1] }}</div>
         </div>
+      @endforeach
     </div>
+  </section>
 
-    <!-- CTA -->
-    <div class="bg-gray-50">
-        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8 lg:flex lg:items-center lg:justify-between">
-            <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-                <span class="block">¿Listo para optimizar tu próxima obra?</span>
-                <span class="block text-blue-600">Únete hoy mismo. Es gratis.</span>
-            </h2>
-            <div class="mt-8 flex lg:mt-0 lg:flex-shrink-0">
-                <div class="inline-flex rounded-md shadow">
-                    <a href="{{ route('register') }}" class="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-                        Crear cuenta
-                    </a>
-                </div>
-            </div>
-        </div>
+  {{-- Beneficios --}}
+  <section id="beneficios" class="bg-slate-50 border-y border-slate-200/70">
+    <div class="mx-auto max-w-7xl px-4 py-14">
+      <h2 class="text-2xl font-black">Beneficios</h2>
+      <div class="mt-6 grid md:grid-cols-3 gap-4">
+        @foreach ([
+          ['Control y orden', 'Procesos estandarizados y centralizados.'],
+          ['Trazabilidad', 'Historial de cambios y movimientos.'],
+          ['Seguridad', 'Roles, permisos y contexto por empresa.'],
+        ] as $b)
+          <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="font-black">{{ $b[0] }}</div>
+            <div class="text-sm text-slate-600 mt-2">{{ $b[1] }}</div>
+          </div>
+        @endforeach
+      </div>
+
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a href="{{ route('login') }}"
+           class="inline-flex items-center justify-center px-5 h-11 rounded-xl bg-indigo-600 text-white font-bold shadow-sm hover:bg-indigo-700">
+          Entrar al sistema
+        </a>
+        <a href="#"
+           class="inline-flex items-center justify-center px-5 h-11 rounded-xl bg-white text-slate-800 font-bold border border-slate-200 hover:bg-slate-100">
+          Solicitar demo
+        </a>
+      </div>
     </div>
+  </section>
 
-    <!-- Footer -->
-    <footer class="bg-white">
-        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-            <p class="text-center text-base text-gray-400">
-                &copy; {{ date('Y') }} ConstruApp. Todos los derechos reservados.
-            </p>
+  {{-- Footer institucional --}}
+  <footer class="bg-[#002d69] text-white">
+    <div class="mx-auto max-w-7xl px-4 py-10">
+      <div class="grid md:grid-cols-2 gap-6 items-start">
+        <div>
+          <div class="text-lg font-black">Alcaldía / Institución</div>
+          <p class="mt-2 text-white/85 text-sm leading-relaxed">
+            Para mayor información, puede comunicarse al <span class="font-bold">502-4411</span> o escribir a nuestro WhatsApp
+            <span class="font-bold">6850-5613</span>. Con gusto le orientaremos.
+          </p>
         </div>
-    </footer>
+        <div class="md:text-right">
+          <div class="text-sm text-white/80">© {{ date('Y') }} — Plataforma de Gestión</div>
+          <div class="text-xs text-white/70 mt-1">Versión institucional • Seguridad y trazabilidad</div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
 </body>
 </html>

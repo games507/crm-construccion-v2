@@ -248,7 +248,7 @@
               <path d="M3 10h18"/>
             </svg>
           </div>
-          <div><div class="tile-name">Almacenes</div><div class="tile-meta">Activos</div></div>
+          <div><div class="tile-name">Almacenes</div><div class="tile-meta">Almacen</div></div>
         </div>
         <div class="tile-val">{{ (int)($k['almacenes'] ?? 0) }}</div>
       </div>
@@ -264,7 +264,7 @@
               <path d="M2 12l10 5 10-5"/>
             </svg>
           </div>
-          <div><div class="tile-name">Materiales</div><div class="tile-meta">Catálogo</div></div>
+          <div><div class="tile-name">Materiales</div><div class="tile-meta">Materiales</div></div>
         </div>
         <div class="tile-val">{{ (int)($k['materiales'] ?? 0) }}</div>
       </div>
@@ -295,7 +295,7 @@
               <path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>
             </svg>
           </div>
-          <div><div class="tile-name">Proyectos</div><div class="tile-meta">Registrados</div></div>
+          <div><div class="tile-name">Proyectos</div><div class="tile-meta">Proyectos</div></div>
         </div>
         <div class="tile-val">{{ number_format((int)($k['proyectos'] ?? 0), 0) }}</div>
       </div>

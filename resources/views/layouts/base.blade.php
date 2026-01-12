@@ -15,13 +15,23 @@
   use App\Support\EmpresaScope;
 
   $user = auth()->user();
-  $isSuperAdmin = $user && $user->hasRole('Super Admin');
+
+  // ✅ NO dependas del nombre exacto del rol
+  $isSuperAdmin = false;
+  if ($user) {
+    if (method_exists($user, 'hasRole')) {
+      $isSuperAdmin = $user->hasRole('SuperAdmin') || $user->hasRole('Super Admin');
+    } elseif (isset($user->is_superadmin)) {
+      $isSuperAdmin = (bool) $user->is_superadmin;
+    }
+  }
 
   $empresaCtxId = EmpresaScope::getId();
   $hasCtx = EmpresaScope::has();
 @endphp
 
-<div class="min-h-screen w-full flex overflow-hidden">
+{{-- ✅ Wrapper pantalla completa + evita bugs de scroll en flex --}}
+<div class="h-screen w-full flex overflow-hidden">
 
   {{-- SIDEBAR --}}
   @auth
@@ -29,7 +39,8 @@
   @endauth
 
   {{-- MAIN --}}
-  <main class="flex-1 min-w-0 flex flex-col">
+  {{-- ✅ min-h-0 es CLAVE para que el hijo (content) pueda scrollear en flex --}}
+  <main class="flex-1 min-w-0 min-h-0 flex flex-col">
 
     {{-- HEADER --}}
     <header class="sticky top-0 z-20 bg-white/70 backdrop-blur border-b border-slate-900/10">
@@ -82,7 +93,8 @@
     </header>
 
     {{-- CONTENT --}}
-    <div class="flex-1 p-4 lg:p-6 w-full min-w-0 overflow-x-hidden">
+    {{-- ✅ Aquí es donde se arregla el scroll: overflow-y-auto + min-h-0 --}}
+    <div class="flex-1 min-h-0 w-full min-w-0 overflow-y-auto overflow-x-hidden p-4 lg:p-6">
       @yield('content')
     </div>
 

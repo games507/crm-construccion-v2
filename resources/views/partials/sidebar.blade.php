@@ -66,14 +66,19 @@
     }
 
     // =========================
-    // RUTAS ACTIVAS
+    // RUTAS ACTIVAS (FIX /app)
     // =========================
-    $path = trim(request()->path(), '/');
-    $is = fn($p) => trim($path,'/') === trim($p,'/');
-    $starts = fn($p) => str_starts_with(trim($path,'/'), trim($p,'/'));
+    $path = trim(request()->path(), '/');                // ej: "app/inventario/materiales"
+    $pathNoApp = preg_replace('#^app/?#', '', $path);    // ej: "inventario/materiales" o "" cuando es /app
 
+    $is = fn($p) => trim($pathNoApp,'/') === trim($p,'/');
+    $starts = fn($p) => str_starts_with(trim($pathNoApp,'/'), trim($p,'/'));
+
+    $dashActive  = request()->routeIs('dashboard'); // ✅ mejor por route name
     $invActive   = $starts('inventario');
     $adminActive = $starts('admin');
+
+    // proyectos siguen con routeIs
     $proyActive  = request()->routeIs('admin.proyectos*');
 
     // =========================
@@ -237,9 +242,9 @@
     {{-- DASHBOARD --}}
     <a href="{{ route('dashboard') }}"
        class="group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-extrabold transition
-              {{ $is('dashboard') ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900' }}"
+              {{ $dashActive ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900' }}"
        :class="$store.sidebar.collapsed ? 'justify-center' : ''">
-      <span class="h-5 w-5 shrink-0 {{ $is('dashboard') ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-900' }}">
+      <span class="h-5 w-5 shrink-0 {{ $dashActive ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-900' }}">
         {!! $icon('dashboard') !!}
       </span>
       <span x-show="!$store.sidebar.collapsed" x-transition.opacity.duration.150ms class="truncate">Dashboard</span>
@@ -327,7 +332,6 @@
              class="mt-1 pl-4">
           <div class="border-l border-slate-200 pl-3 space-y-1">
 
-            {{-- ✅ SuperAdmin SIEMPRE ve estos links --}}
             <a href="{{ route('admin.empresas') }}"
                class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
                       {{ request()->routeIs('admin.empresas*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
