@@ -9,7 +9,6 @@ class Proyecto extends Model
 {
     protected $table = 'proyectos';
 
-    // Estados recomendados
     public const ESTADO_PLANEADO   = 'planeado';
     public const ESTADO_EJECUCION  = 'en_ejecucion';
     public const ESTADO_PAUSADO    = 'pausado';
@@ -17,8 +16,10 @@ class Proyecto extends Model
 
     protected $fillable = [
         'empresa_id',
+        'responsable_id',
         'codigo',
         'nombre',
+        'descripcion',
         'ubicacion',
         'fecha_inicio',
         'fecha_fin',
@@ -34,12 +35,14 @@ class Proyecto extends Model
         'activo'       => 'boolean',
     ];
 
-    // --------------------
-    // Relaciones
-    // --------------------
     public function empresa()
     {
         return $this->belongsTo(Empresa::class, 'empresa_id');
+    }
+
+    public function responsable()
+    {
+        return $this->belongsTo(User::class, 'responsable_id');
     }
 
     public function fases()
@@ -51,7 +54,18 @@ class Proyecto extends Model
     {
         return $this->hasMany(ProyectoTarea::class, 'proyecto_id');
     }
+public function getAvanceAttribute()
+{
+    $total = $this->tareas()->count();
 
+    if ($total === 0) {
+        return 0;
+    }
+
+    $sum = (float) $this->tareas()->sum('porcentaje');
+
+    return round($sum / $total, 2);
+}
     public function costos()
     {
         return $this->hasMany(ProyectoCosto::class, 'proyecto_id');
@@ -62,9 +76,6 @@ class Proyecto extends Model
         return $this->hasMany(ProyectoDocumento::class, 'proyecto_id');
     }
 
-    // --------------------
-    // Scopes
-    // --------------------
     public function scopeActivos(Builder $q): Builder
     {
         return $q->where('activo', 1);
@@ -75,11 +86,18 @@ class Proyecto extends Model
         return $q->where('empresa_id', $empresaId);
     }
 
-    // --------------------
-    // Accesores útiles
-    // --------------------
     public function getPresupuestoFormatoAttribute(): string
     {
         return number_format((float) $this->presupuesto, 2, '.', ',');
+    }
+
+    public static function estados(): array
+    {
+        return [
+            self::ESTADO_PLANEADO   => 'Planeado',
+            self::ESTADO_EJECUCION  => 'En ejecución',
+            self::ESTADO_PAUSADO    => 'Pausado',
+            self::ESTADO_FINALIZADO => 'Finalizado',
+        ];
     }
 }

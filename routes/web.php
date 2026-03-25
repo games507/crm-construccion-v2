@@ -5,9 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 
-// ✅ FIX: estaba mal el namespace
+// INVENTARIO
 use App\Http\Controllers\Inventario\InventarioExistenciasController;
-
 use App\Http\Controllers\Inventario\AlmacenController;
 use App\Http\Controllers\Inventario\MaterialController;
 use App\Http\Controllers\Inventario\MovimientosController;
@@ -24,21 +23,16 @@ use App\Http\Controllers\Admin\PermisosController;
 use App\Http\Controllers\Admin\EmpresasController;
 use App\Http\Controllers\Admin\ProyectosController;
 use App\Http\Controllers\Admin\MiEmpresaController;
+use App\Http\Controllers\Admin\ProyectoFaseController;
+use App\Http\Controllers\Admin\ProyectoTareaController;
 
 /*
 |--------------------------------------------------------------------------
 | LANDING PÚBLICA
 |--------------------------------------------------------------------------
-| Ahora el home público es el landing.
 */
 Route::view('/', 'landing')->name('landing');
 
-/*
-|--------------------------------------------------------------------------
-| (Opcional) Compatibilidad con home anterior
-|--------------------------------------------------------------------------
-| Si en algún lado tienes route('home'), lo dejamos.
-*/
 Route::get('/home', function () {
     return redirect()->route('landing');
 })->name('home');
@@ -47,7 +41,6 @@ Route::get('/home', function () {
 |--------------------------------------------------------------------------
 | AUTH (GUEST)
 |--------------------------------------------------------------------------
-| Login se queda igual (/login) para no tocar nada existente.
 */
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'create'])->name('login');
@@ -72,11 +65,28 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | DASHBOARD / PORTAL INTERNO (HOME POST-LOGIN)
+    | DASHBOARD
     |--------------------------------------------------------------------------
-    | Mantengo el name('dashboard') para que NO se te rompan links existentes.
     */
     Route::get('/', DashboardController::class)->name('dashboard');
+
+    /*
+    |--------------------------------------------------------------------------
+    | NOTIFICACIONES
+    |--------------------------------------------------------------------------
+    */
+    Route::post('/notificaciones/{id}/leer', function ($id) {
+        $n = auth()->user()->notifications()->where('id', $id)->firstOrFail();
+        $n->markAsRead();
+
+        return back();
+    })->name('notificaciones.leer');
+
+    Route::post('/notificaciones/leer-todas', function () {
+        auth()->user()->unreadNotifications->markAsRead();
+
+        return back();
+    })->name('notificaciones.leer_todas');
 
     /*
     |--------------------------------------------------------------------------
@@ -91,7 +101,7 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | API Existencias (React Island) - protegido
+    | API EXISTENCIAS
     |--------------------------------------------------------------------------
     */
     Route::get('/inventario/existencias/api', [InventarioExistenciasController::class, 'api'])
@@ -100,14 +110,13 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | MI EMPRESA (Admin de empresa - Configuración propia)
+    | MI EMPRESA
     |--------------------------------------------------------------------------
     */
     Route::prefix('admin')
         ->name('admin.')
         ->middleware(['permission:miempresa.ver'])
         ->group(function () {
-
             Route::get('mi-empresa', [MiEmpresaController::class, 'edit'])
                 ->name('mi_empresa.edit');
 
@@ -118,14 +127,13 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | ADMIN - EMPRESAS (SOLO SUPERADMIN)
+    | EMPRESAS (SOLO SUPERADMIN)
     |--------------------------------------------------------------------------
     */
     Route::prefix('admin')
         ->name('admin.')
         ->middleware(['superadmin_only'])
         ->group(function () {
-
             Route::get('empresas', [EmpresasController::class, 'index'])
                 ->name('empresas');
 
@@ -147,7 +155,7 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | ADMIN / CONFIGURACIÓN GLOBAL (Admin del sistema o SuperAdmin)
+    | ADMIN / CONFIGURACIÓN GLOBAL
     |--------------------------------------------------------------------------
     */
     Route::prefix('admin')
@@ -155,7 +163,6 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
         ->middleware(['admin_or_superadmin'])
         ->group(function () {
 
-            // USUARIOS
             Route::get('usuarios', [UsuariosController::class, 'index'])
                 ->middleware('permission:usuarios.ver')
                 ->name('usuarios');
@@ -176,7 +183,6 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
                 ->middleware('permission:usuarios.editar')
                 ->name('usuarios.update');
 
-            // ROLES
             Route::get('roles', [RolesController::class, 'index'])
                 ->middleware('permission:roles.ver')
                 ->name('roles');
@@ -201,7 +207,6 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
                 ->middleware('permission:roles.eliminar')
                 ->name('roles.destroy');
 
-            // PERMISOS
             Route::get('permisos', [PermisosController::class, 'index'])
                 ->middleware('permission:permisos.ver')
                 ->name('permisos');
@@ -225,8 +230,17 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
             Route::delete('permisos/{permission}', [PermisosController::class, 'destroy'])
                 ->middleware('permission:permisos.eliminar')
                 ->name('permisos.destroy');
+        });
 
-            // PROYECTOS (por ahora se queda aquí; lo sacamos del menú en el sidebar)
+    /*
+    |--------------------------------------------------------------------------
+    | PROYECTOS
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('admin')
+        ->name('admin.')
+        ->group(function () {
+
             Route::get('proyectos', [ProyectosController::class, 'index'])
                 ->middleware('permission:proyectos.ver')
                 ->name('proyectos');
@@ -239,6 +253,10 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
                 ->middleware('permission:proyectos.crear')
                 ->name('proyectos.store');
 
+            Route::get('proyectos/{proyecto}', [ProyectosController::class, 'show'])
+                ->middleware('permission:proyectos.ver')
+                ->name('proyectos.show');
+
             Route::get('proyectos/{proyecto}/edit', [ProyectosController::class, 'edit'])
                 ->middleware('permission:proyectos.editar')
                 ->name('proyectos.edit');
@@ -246,6 +264,30 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
             Route::put('proyectos/{proyecto}', [ProyectosController::class, 'update'])
                 ->middleware('permission:proyectos.editar')
                 ->name('proyectos.update');
+
+            Route::post('proyectos/fases', [ProyectoFaseController::class, 'store'])
+                ->middleware('permission:proyectos.editar')
+                ->name('proyectos.fases.store');
+
+            Route::post('proyectos/tareas', [ProyectoTareaController::class, 'store'])
+                ->middleware('permission:proyectos.editar')
+                ->name('proyectos.tareas.store');
+
+            Route::post('proyectos/tareas/update', [ProyectoTareaController::class, 'update'])
+                ->middleware('permission:proyectos.editar')
+                ->name('proyectos.tareas.update');
+
+            Route::get('proyectos/tareas/{tarea}/edit', [ProyectoTareaController::class, 'edit'])
+                ->middleware('permission:proyectos.editar')
+                ->name('proyectos.tareas.edit');
+
+            Route::put('proyectos/tareas/{tarea}', [ProyectoTareaController::class, 'updateFull'])
+                ->middleware('permission:proyectos.editar')
+                ->name('proyectos.tareas.updateFull');
+
+            Route::delete('proyectos/tareas/{tarea}', [ProyectoTareaController::class, 'destroy'])
+                ->middleware('permission:proyectos.editar')
+                ->name('proyectos.tareas.destroy');
         });
 
     /*
@@ -257,12 +299,10 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
         ->name('inventario.')
         ->group(function () {
 
-            // EXISTENCIAS
             Route::get('existencias', [InventarioController::class, 'existencias'])
                 ->middleware('permission:inventario.ver')
                 ->name('existencias');
 
-            // ALMACENES
             Route::get('almacenes', [AlmacenController::class, 'index'])
                 ->middleware('permission:almacenes.ver')
                 ->name('almacenes');
@@ -291,7 +331,6 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
                 ->middleware('permission:almacenes.eliminar')
                 ->name('almacenes.deactivate');
 
-            // MATERIALES
             Route::get('materiales', [MaterialController::class, 'index'])
                 ->middleware('permission:materiales.ver')
                 ->name('materiales');
@@ -316,7 +355,6 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
                 ->middleware('permission:materiales.eliminar')
                 ->name('materiales.destroy');
 
-            // KARDEX
             Route::get('kardex', [KardexController::class, 'index'])
                 ->middleware('permission:kardex.ver')
                 ->name('kardex');
@@ -325,7 +363,6 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
                 ->middleware('permission:kardex.ver')
                 ->name('kardex.ver');
 
-            // MOVIMIENTOS
             Route::get('movimientos', [MovimientosController::class, 'index'])
                 ->middleware('permission:inventario.ver')
                 ->name('movimientos');
@@ -344,7 +381,6 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
 |--------------------------------------------------------------------------
 | COMPATIBILIDAD: /dashboard viejo
 |--------------------------------------------------------------------------
-| Si alguien entra a /dashboard por costumbre, lo mandamos a /app
 */
 Route::get('/dashboard', function () {
     return redirect()->route('dashboard');
