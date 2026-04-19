@@ -28,6 +28,7 @@ class TareaAsignadaNotification extends Notification
             'tarea_id'    => $this->tarea->id,
             'proyecto_id' => $this->tarea->proyecto_id,
             'estado'      => $this->tarea->estado,
+            'url'         => route('admin.proyectos.tareas.edit', $this->tarea->id),
         ];
     }
 }

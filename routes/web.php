@@ -88,6 +88,19 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
         return back();
     })->name('notificaciones.leer_todas');
 
+    Route::get('/notificaciones/ir/{id}', function ($id) {
+        $n = auth()->user()
+            ->notifications()
+            ->where('id', $id)
+            ->firstOrFail();
+
+        if (!$n->read_at) {
+            $n->markAsRead();
+        }
+
+        return redirect($n->data['url'] ?? route('dashboard'));
+    })->name('notificaciones.ir');
+
     /*
     |--------------------------------------------------------------------------
     | SUPER ADMIN - CONTEXTO DE EMPRESA

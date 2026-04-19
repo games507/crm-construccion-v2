@@ -25,6 +25,7 @@ class Proyecto extends Model
         'fecha_fin',
         'estado',
         'presupuesto',
+        'porcentaje',
         'activo',
     ];
 
@@ -32,6 +33,7 @@ class Proyecto extends Model
         'fecha_inicio' => 'date',
         'fecha_fin'    => 'date',
         'presupuesto'  => 'decimal:2',
+        'porcentaje'   => 'decimal:2',
         'activo'       => 'boolean',
     ];
 
@@ -54,18 +56,7 @@ class Proyecto extends Model
     {
         return $this->hasMany(ProyectoTarea::class, 'proyecto_id');
     }
-public function getAvanceAttribute()
-{
-    $total = $this->tareas()->count();
 
-    if ($total === 0) {
-        return 0;
-    }
-
-    $sum = (float) $this->tareas()->sum('porcentaje');
-
-    return round($sum / $total, 2);
-}
     public function costos()
     {
         return $this->hasMany(ProyectoCosto::class, 'proyecto_id');
@@ -89,6 +80,24 @@ public function getAvanceAttribute()
     public function getPresupuestoFormatoAttribute(): string
     {
         return number_format((float) $this->presupuesto, 2, '.', ',');
+    }
+
+    /**
+     * Avance calculado desde tareas
+     * Si ya guardas porcentaje en la tabla proyectos,
+     * puedes usar este accesor como respaldo o referencia.
+     */
+    public function getAvanceAttribute(): float
+    {
+        $total = $this->tareas()->count();
+
+        if ($total === 0) {
+            return 0;
+        }
+
+        $sum = (float) $this->tareas()->sum('porcentaje');
+
+        return round($sum / $total, 2);
     }
 
     public static function estados(): array

@@ -94,6 +94,7 @@
             <th class="px-4 py-3 font-semibold">Proyecto</th>
             <th class="px-4 py-3 font-semibold">Responsable</th>
             <th class="px-4 py-3 font-semibold">Estado</th>
+            <th class="px-4 py-3 font-semibold">Progreso</th>
             <th class="px-4 py-3 font-semibold">Fechas</th>
             <th class="px-4 py-3 font-semibold text-right">Presupuesto</th>
             <th class="px-4 py-3 font-semibold text-right">Acciones</th>
@@ -118,9 +119,28 @@
                 ?? $p->responsable->nombre
                 ?? $p->responsable->nombre_completo
                 ?? '—';
+
+              $porcentaje = (float) ($p->porcentaje ?? $p->avance ?? 0);
+              $porcentaje = max(0, min(100, round($porcentaje, 2)));
+
+              $progressColor = match (true) {
+                $porcentaje >= 100 => 'bg-emerald-500',
+                $porcentaje >= 70  => 'bg-green-500',
+                $porcentaje >= 31  => 'bg-amber-500',
+                $porcentaje > 0    => 'bg-rose-500',
+                default            => 'bg-slate-300',
+              };
+
+              $progressText = match (true) {
+                $porcentaje >= 100 => 'text-emerald-700',
+                $porcentaje >= 70  => 'text-green-700',
+                $porcentaje >= 31  => 'text-amber-700',
+                $porcentaje > 0    => 'text-rose-700',
+                default            => 'text-slate-500',
+              };
             @endphp
 
-            <tr class="hover:bg-slate-50/60">
+            <tr class="hover:bg-slate-50/60 align-top">
               <td class="px-4 py-3 font-extrabold text-slate-900">
                 {{ $p->codigo ?? '—' }}
               </td>
@@ -150,6 +170,22 @@
                 <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-bold border {{ $badge }}">
                   {{ $estadoLabel }}
                 </span>
+              </td>
+
+              <td class="px-4 py-3 min-w-[210px]">
+                <div class="flex items-center justify-between gap-3 mb-2">
+                  <span class="text-xs font-semibold text-slate-500">Avance</span>
+                  <span class="text-xs font-extrabold {{ $progressText }}">
+                    {{ number_format($porcentaje, 0) }}%
+                  </span>
+                </div>
+
+                <div class="w-full h-2.5 rounded-full bg-slate-200 overflow-hidden">
+                  <div
+                    class="h-2.5 rounded-full {{ $progressColor }} transition-all duration-500"
+                    style="width: {{ $porcentaje }}%;"
+                  ></div>
+                </div>
               </td>
 
               <td class="px-4 py-3 text-slate-700">
@@ -200,7 +236,7 @@
             </tr>
           @empty
             <tr>
-              <td class="px-4 py-10 text-center text-slate-500" colspan="7">
+              <td class="px-4 py-10 text-center text-slate-500" colspan="8">
                 No hay proyectos para los filtros seleccionados.
               </td>
             </tr>

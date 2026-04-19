@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Proyecto;
+use App\Models\ProyectoFase;
 use App\Models\ProyectoTarea;
 use App\Models\User;
 use App\Notifications\TareaAsignadaNotification;
@@ -26,6 +28,37 @@ class ProyectoTareaController extends Controller
         }
 
         return 'id';
+    }
+
+    /**
+     * Recalcula el porcentaje de una fase y del proyecto completo
+     */
+    private function recalcularProgresoProyecto(int $proyectoId): void
+    {
+        $proyecto = Proyecto::with('fases.tareas')->find($proyectoId);
+
+        if (!$proyecto) {
+            return;
+        }
+
+        foreach ($proyecto->fases as $fase) {
+            $promedioFase = $fase->tareas()->avg('porcentaje');
+            $fase->porcentaje = $promedioFase ?? 0;
+            $fase->save();
+        }
+
+        $promedioProyecto = $proyecto->fases()->avg('porcentaje');
+        $proyecto->porcentaje = $promedioProyecto ?? 0;
+
+        if ((float) $proyecto->porcentaje >= 100) {
+            $proyecto->estado = 'finalizado';
+        } elseif ((float) $proyecto->porcentaje > 0) {
+            $proyecto->estado = 'en_proceso';
+        } else {
+            $proyecto->estado = 'pendiente';
+        }
+
+        $proyecto->save();
     }
 
     public function store(Request $request)
@@ -59,6 +92,9 @@ class ProyectoTareaController extends Controller
         }
 
         $tarea = ProyectoTarea::create($data);
+
+        // Recalcular progreso del proyecto/fases
+        $this->recalcularProgresoProyecto((int) $tarea->proyecto_id);
 
         // 🔔 Notificación al responsable asignado
         if (!empty($tarea->responsable_id)) {
@@ -96,6 +132,9 @@ class ProyectoTareaController extends Controller
             'porcentaje' => $porcentaje,
             'estado'     => $data['estado'],
         ]);
+
+        // Recalcular progreso del proyecto/fases
+        $this->recalcularProgresoProyecto((int) $tarea->proyecto_id);
 
         return back()->with('ok', 'Tarea actualizada correctamente.');
     }
@@ -157,8 +196,17 @@ class ProyectoTareaController extends Controller
         }
 
         $responsableAnterior = $tarea->responsable_id;
+        $proyectoAnterior = $tarea->proyecto_id;
 
         $tarea->update($data);
+
+        // Recalcular proyecto actual
+        $this->recalcularProgresoProyecto((int) $tarea->proyecto_id);
+
+        // Si por alguna razón cambió de proyecto, recalcular el anterior también
+        if ((int) $proyectoAnterior !== (int) $tarea->proyecto_id) {
+            $this->recalcularProgresoProyecto((int) $proyectoAnterior);
+        }
 
         // 🔔 Notificar si cambió el responsable
         if (!empty($data['responsable_id']) && (int) $data['responsable_id'] !== (int) $responsableAnterior) {
@@ -180,6 +228,9 @@ class ProyectoTareaController extends Controller
         $proyectoId = $tarea->proyecto_id;
 
         $tarea->delete();
+
+        // Recalcular progreso del proyecto/fases
+        $this->recalcularProgresoProyecto((int) $proyectoId);
 
         return redirect()
             ->route('admin.proyectos.show', $proyectoId)

@@ -50,13 +50,19 @@
     $totalMovs = isset($ultimosMovs) ? (is_countable($ultimosMovs) ? count($ultimosMovs) : 0) : 0;
   }
 
-  $proyectosCount = (int) ($k['proyectos'] ?? 0);
+  $proyectosCount       = (int) ($k['proyectos'] ?? 0);
+  $proyectosActivos     = (int) ($k['proyectos_activos'] ?? 0);
+  $proyectosFinalizados = (int) ($k['proyectos_finalizados'] ?? 0);
+  $tareasPendientes     = (int) ($k['tareas_pendientes'] ?? 0);
+  $tareasVencidas       = (int) ($k['tareas_vencidas'] ?? 0);
 
   // Valor inventario (para panel top materiales)
   $valorInventario = (float) ($k['valor_inventario'] ?? 0);
 
   // Colecciones seguras
-  $topMateriales = $topMateriales ?? collect();
+  $topMateriales      = $topMateriales ?? collect();
+  $ultimosMovs        = $ultimosMovs ?? collect();
+  $proyectosRecientes = $proyectosRecientes ?? collect();
 @endphp
 
 <style>
@@ -80,6 +86,7 @@
     background:#fff;color:#0f172a;
     box-shadow:0 10px 24px rgba(2,6,23,.06);
     white-space:nowrap;
+    transition:.18s ease;
   }
   .a-btn:hover{transform:translateY(-1px)}
   .a-ico{width:18px;height:18px;display:inline-block}
@@ -93,12 +100,16 @@
 
   .grid12{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;margin-top:14px}
   .span3{grid-column:span 3}
-  .span8{grid-column:span 8}
   .span4{grid-column:span 4}
+  .span6{grid-column:span 6}
+  .span8{grid-column:span 8}
+  .span12{grid-column:span 12}
   @media (max-width: 1024px){
     .span3{grid-column:span 6}
-    .span8{grid-column:span 12}
     .span4{grid-column:span 12}
+    .span6{grid-column:span 12}
+    .span8{grid-column:span 12}
+    .span12{grid-column:span 12}
   }
   @media (max-width: 560px){
     .span3{grid-column:span 12}
@@ -134,6 +145,10 @@
   .p2{background:rgba(34,197,94,.12)}
   .p3{background:rgba(14,165,233,.12)}
   .p4{background:rgba(245,158,11,.12)}
+  .p5{background:rgba(236,72,153,.12)}
+  .p6{background:rgba(239,68,68,.12)}
+  .p7{background:rgba(16,185,129,.12)}
+  .p8{background:rgba(168,85,247,.12)}
 
   .cardx{
     background:#fff;border-radius:16px;padding:16px;
@@ -170,6 +185,37 @@
   .mov-left{display:flex;align-items:center;gap:12px;min-width:0}
   .mov-title{font-weight:950;color:#0f172a}
   .mov-total{font-size:22px;font-weight:950;color:#0f172a;white-space:nowrap}
+
+  .badge{
+    display:inline-flex;align-items:center;justify-content:center;
+    padding:4px 10px;border-radius:999px;
+    font-size:11px;font-weight:900;line-height:1;
+    border:1px solid transparent;
+    white-space:nowrap;
+  }
+  .b-green{background:#dcfce7;color:#065f46;border-color:#bbf7d0}
+  .b-yellow{background:#fef3c7;color:#92400e;border-color:#fde68a}
+  .b-red{background:#fee2e2;color:#991b1b;border-color:#fecaca}
+  .b-blue{background:#dbeafe;color:#1d4ed8;border-color:#bfdbfe}
+  .b-slate{background:#e2e8f0;color:#334155;border-color:#cbd5e1}
+
+  .mini-progress{
+    margin-top:8px;
+    width:100%;height:8px;border-radius:999px;
+    background:#e5e7eb;overflow:hidden;
+  }
+  .mini-progress > span{
+    display:block;height:100%;border-radius:999px;
+    background:linear-gradient(90deg,#3b82f6,#06b6d4);
+  }
+
+  .alert-item{
+    border-radius:14px;padding:12px 14px;font-weight:800;
+    border:1px solid transparent;
+  }
+  .alert-red{background:#fef2f2;color:#991b1b;border-color:#fecaca}
+  .alert-yellow{background:#fffbeb;color:#92400e;border-color:#fde68a}
+  .alert-green{background:#ecfdf5;color:#065f46;border-color:#bbf7d0}
 </style>
 
 <div class="dash-wrap">
@@ -235,7 +281,7 @@
     </div>
   </div>
 
-  {{-- KPIs --}}
+  {{-- KPIs PRINCIPALES --}}
   <div class="grid12">
 
     <div class="span3">
@@ -248,7 +294,7 @@
               <path d="M3 10h18"/>
             </svg>
           </div>
-          <div><div class="tile-name">Almacenes</div><div class="tile-meta">Almacen</div></div>
+          <div><div class="tile-name">Almacenes</div><div class="tile-meta">Almacén</div></div>
         </div>
         <div class="tile-val">{{ (int)($k['almacenes'] ?? 0) }}</div>
       </div>
@@ -297,13 +343,78 @@
           </div>
           <div><div class="tile-name">Proyectos</div><div class="tile-meta">Proyectos</div></div>
         </div>
-        <div class="tile-val">{{ number_format((int)($k['proyectos'] ?? 0), 0) }}</div>
+        <div class="tile-val">{{ number_format($proyectosCount, 0) }}</div>
       </div>
     </div>
 
   </div>
 
-  {{-- Paneles --}}
+  {{-- KPIs DE PROYECTOS / TAREAS --}}
+  <div class="grid12">
+
+    <div class="span3">
+      <div class="tile" title="Proyectos activos">
+        <div class="tile-left">
+          <div class="tile-ico p5" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 20V10"/>
+              <path d="M18 20V4"/>
+              <path d="M6 20v-6"/>
+            </svg>
+          </div>
+          <div><div class="tile-name">Activos</div><div class="tile-meta">Proyectos activos</div></div>
+        </div>
+        <div class="tile-val">{{ $proyectosActivos }}</div>
+      </div>
+    </div>
+
+    <div class="span3">
+      <div class="tile" title="Proyectos finalizados">
+        <div class="tile-left">
+          <div class="tile-ico p7" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m20 6-11 11-5-5"/>
+            </svg>
+          </div>
+          <div><div class="tile-name">Finalizados</div><div class="tile-meta">Finalizados</div></div>
+        </div>
+        <div class="tile-val">{{ $proyectosFinalizados }}</div>
+      </div>
+    </div>
+
+    <div class="span3">
+      <div class="tile" title="Tareas pendientes">
+        <div class="tile-left">
+          <div class="tile-ico p8" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 11l3 3L22 4"/>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
+          </div>
+          <div><div class="tile-name">Pendientes</div><div class="tile-meta">Tareas pendientes</div></div>
+        </div>
+        <div class="tile-val">{{ $tareasPendientes }}</div>
+      </div>
+    </div>
+
+    <div class="span3">
+      <div class="tile" title="Tareas vencidas">
+        <div class="tile-left">
+          <div class="tile-ico p6" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 6v6l4 2"/>
+            </svg>
+          </div>
+          <div><div class="tile-name">Vencidas</div><div class="tile-meta">Tareas vencidas</div></div>
+        </div>
+        <div class="tile-val" style="color:#dc2626">{{ $tareasVencidas }}</div>
+      </div>
+    </div>
+
+  </div>
+
+  {{-- PANEL PRINCIPAL --}}
   <div class="grid12">
 
     {{-- Movimientos --}}
@@ -330,6 +441,45 @@
             </span>
             Ver todo
           </a>
+        </div>
+      </div>
+
+      <div class="cardx" style="margin-top:14px;">
+        <div style="font-weight:950;color:#0f172a;">Últimos movimientos</div>
+        <div class="muted" style="margin-top:4px;">Resumen reciente del inventario</div>
+
+        <div class="list">
+          @forelse($ultimosMovs as $m)
+            <div class="item">
+              <div class="row">
+                <div>
+                  <div style="font-weight:950;">
+                    {{ $m->material->descripcion ?? 'Material' }}
+                  </div>
+                  <div class="muted">
+                    {{ ucfirst($m->tipo ?? 'movimiento') }}
+                    @if(!empty($m->fecha))
+                      · {{ \Illuminate\Support\Carbon::parse($m->fecha)->format('d/m/Y') }}
+                    @endif
+                  </div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-weight:950;">
+                    {{ number_format((float)($m->cantidad ?? 0), 4) }}
+                  </div>
+                  <div class="muted">
+                    @if(($m->tipo ?? '') === 'traslado')
+                      {{ $m->almacenOrigen->nombre ?? 'Origen' }} → {{ $m->almacenDestino->nombre ?? 'Destino' }}
+                    @else
+                      {{ $m->almacenDestino->nombre ?? $m->almacenOrigen->nombre ?? '—' }}
+                    @endif
+                  </div>
+                </div>
+              </div>
+            </div>
+          @empty
+            <div class="muted">Aún no hay movimientos registrados.</div>
+          @endforelse
         </div>
       </div>
     </div>
@@ -362,6 +512,92 @@
           @empty
             <div class="muted">Aún no hay existencias valoradas.</div>
           @endforelse
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  {{-- PROYECTOS RECIENTES + ALERTAS --}}
+  <div class="grid12">
+
+    <div class="span8">
+      <div class="cardx">
+        <div style="font-weight:950;color:#0f172a;">Proyectos recientes</div>
+        <div class="muted" style="margin-top:4px;">Últimos proyectos de la empresa</div>
+
+        <div class="list">
+          @forelse($proyectosRecientes as $p)
+            @php
+              $estado = (string)($p->estado ?? 'planeado');
+              $porcentaje = (float)($p->porcentaje ?? $p->avance ?? 0);
+
+              $badgeClass = match($estado){
+                'finalizado'   => 'b-green',
+                'en_ejecucion' => 'b-yellow',
+                'pausado'      => 'b-red',
+                'planeado'     => 'b-blue',
+                default        => 'b-slate',
+              };
+            @endphp
+
+            <div class="item">
+              <div class="row" style="align-items:flex-start;">
+                <div style="min-width:0;flex:1;">
+                  <div style="font-weight:950;color:#0f172a;">
+                    {{ $p->nombre ?? 'Proyecto' }}
+                  </div>
+                  <div class="muted">
+                    {{ $p->codigo ?? 'Sin código' }}
+                  </div>
+
+                  <div class="mini-progress">
+                    <span style="width: {{ max(0, min(100, $porcentaje)) }}%"></span>
+                  </div>
+                </div>
+
+                <div style="text-align:right;display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+                  <span class="badge {{ $badgeClass }}">{{ str_replace('_',' ', ucfirst($estado)) }}</span>
+                  <div style="font-weight:950;color:#0f172a;">{{ number_format($porcentaje, 0) }}%</div>
+                </div>
+              </div>
+            </div>
+          @empty
+            <div class="muted">No hay proyectos registrados todavía.</div>
+          @endforelse
+        </div>
+      </div>
+    </div>
+
+    <div class="span4">
+      <div class="cardx">
+        <div style="font-weight:950;color:#0f172a;">Alertas</div>
+        <div class="muted" style="margin-top:4px;">Estado rápido del sistema</div>
+
+        <div class="list">
+          @if($tareasVencidas > 0)
+            <div class="alert-item alert-red">
+              ⚠️ Tienes {{ $tareasVencidas }} tarea(s) vencida(s).
+            </div>
+          @endif
+
+          @if($tareasPendientes > 10)
+            <div class="alert-item alert-yellow">
+              ⚠️ Hay muchas tareas pendientes: {{ $tareasPendientes }}.
+            </div>
+          @endif
+
+          @if($proyectosActivos > 0)
+            <div class="alert-item alert-green">
+              ✅ Proyectos activos en seguimiento: {{ $proyectosActivos }}.
+            </div>
+          @endif
+
+          @if($tareasVencidas <= 0 && $tareasPendientes <= 10 && $proyectosActivos <= 0)
+            <div class="alert-item alert-green">
+              ✅ Todo bajo control por ahora.
+            </div>
+          @endif
         </div>
       </div>
     </div>

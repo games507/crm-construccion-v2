@@ -22,7 +22,23 @@
   $fi = $proyecto->fecha_inicio?->format('Y-m-d') ?? '—';
   $ff = $proyecto->fecha_fin?->format('Y-m-d') ?? '—';
 
-  $avance = max(0, min(100, (float)($proyecto->avance ?? 0)));
+  $avance = max(0, min(100, (float)($proyecto->porcentaje ?? $proyecto->avance ?? 0)));
+
+  $avanceColor = match (true) {
+    $avance >= 100 => 'from-emerald-500 to-emerald-600',
+    $avance >= 70  => 'from-green-500 to-green-600',
+    $avance >= 31  => 'from-amber-500 to-amber-600',
+    $avance > 0    => 'from-rose-500 to-rose-600',
+    default        => 'from-slate-400 to-slate-500',
+  };
+
+  $avanceText = match (true) {
+    $avance >= 100 => 'text-emerald-700',
+    $avance >= 70  => 'text-green-700',
+    $avance >= 31  => 'text-amber-700',
+    $avance > 0    => 'text-rose-700',
+    default        => 'text-slate-500',
+  };
 
   // ===== ICONOS SVG =====
   $iconTasks = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg>';
@@ -91,15 +107,15 @@
 
   {{-- AVANCE GENERAL --}}
   <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
-    <div class="flex justify-between items-center">
+    <div class="flex justify-between items-center gap-3">
       <h2 class="font-bold text-slate-700">Avance del Proyecto</h2>
-      <span class="font-extrabold text-indigo-700">
+      <span class="font-extrabold {{ $avanceText }}">
         {{ number_format($avance, 2) }}%
       </span>
     </div>
 
     <div class="mt-3 w-full bg-slate-200 rounded-full h-4 overflow-hidden shadow-inner">
-      <div class="bg-gradient-to-r from-indigo-500 to-indigo-700 h-4 rounded-full transition-all duration-500 ease-out"
+      <div class="bg-gradient-to-r {{ $avanceColor }} h-4 rounded-full transition-all duration-500 ease-out"
            style="width: {{ $avance }}%;">
       </div>
     </div>
@@ -304,10 +320,21 @@
     @forelse($proyecto->fases as $fase)
       @php
         $porcentaje = max(0, min(100, (float)($fase->porcentaje ?? 0)));
+
         $faseColor = match(true) {
           $porcentaje >= 100 => 'from-emerald-500 to-emerald-600',
-          $porcentaje > 0    => 'from-indigo-500 to-indigo-700',
+          $porcentaje >= 70  => 'from-green-500 to-green-600',
+          $porcentaje >= 31  => 'from-amber-500 to-amber-600',
+          $porcentaje > 0    => 'from-rose-500 to-rose-600',
           default            => 'from-slate-400 to-slate-500',
+        };
+
+        $faseText = match(true) {
+          $porcentaje >= 100 => 'text-emerald-700',
+          $porcentaje >= 70  => 'text-green-700',
+          $porcentaje >= 31  => 'text-amber-700',
+          $porcentaje > 0    => 'text-rose-700',
+          default            => 'text-slate-500',
         };
       @endphp
 
@@ -317,7 +344,7 @@
             <div class="font-semibold text-slate-900">{{ $fase->nombre }}</div>
             <div class="text-xs text-slate-500">Orden: {{ $fase->orden ?? 0 }}</div>
           </div>
-          <div class="text-sm font-extrabold text-indigo-700">
+          <div class="text-sm font-extrabold {{ $faseText }}">
             {{ number_format($porcentaje, 2) }}%
           </div>
         </div>
