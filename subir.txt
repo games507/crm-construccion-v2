@@ -2,7 +2,7 @@ git init
 
 git add .
 
-git commit -m "landing"
+git commit -m "costo/cxp"
 
 git push -u origin master
 
