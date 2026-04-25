@@ -66,7 +66,10 @@ class Proyecto extends Model
     {
         return $this->hasMany(ProyectoDocumento::class, 'proyecto_id');
     }
-
+public function cuentasPorPagar()
+{
+    return $this->hasMany(CuentaPorPagar::class, 'proyecto_id');
+}
     public function scopeActivos(Builder $q): Builder
     {
         return $q->where('activo', 1);
@@ -81,6 +84,8 @@ class Proyecto extends Model
     {
         return number_format((float) $this->presupuesto, 2, '.', ',');
     }
+
+    
 
     /**
      * Avance calculado desde tareas
@@ -98,6 +103,36 @@ class Proyecto extends Model
         $sum = (float) $this->tareas()->sum('porcentaje');
 
         return round($sum / $total, 2);
+    }
+
+    /**
+     * Total ejecutado en costos del proyecto
+     */
+    public function getCostoEjecutadoAttribute(): float
+    {
+        return round((float) $this->costos()->sum('monto'), 2);
+    }
+
+    /**
+     * Saldo disponible del presupuesto
+     */
+    public function getSaldoDisponibleAttribute(): float
+    {
+        return round((float) $this->presupuesto - (float) $this->costo_ejecutado, 2);
+    }
+
+    /**
+     * Porcentaje consumido del presupuesto
+     */
+    public function getPorcentajeConsumidoAttribute(): float
+    {
+        $presupuesto = (float) $this->presupuesto;
+
+        if ($presupuesto <= 0) {
+            return 0;
+        }
+
+        return round(((float) $this->costo_ejecutado / $presupuesto) * 100, 2);
     }
 
     public static function estados(): array

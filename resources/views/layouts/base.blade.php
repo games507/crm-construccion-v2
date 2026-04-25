@@ -36,6 +36,7 @@
         inset 0 1px 0 rgba(255,255,255,.85);
       transition: all .22s ease;
     }
+
     .notif-btn:hover{
       transform: translateY(-1px);
       box-shadow:
@@ -82,6 +83,7 @@
     .notif-item{
       transition: background .18s ease, transform .18s ease;
     }
+
     .notif-item:hover{
       background:#f8fafc;
     }
@@ -136,6 +138,7 @@
       transition:all .18s ease;
       white-space:nowrap;
     }
+
     .notif-mark-btn:hover{
       background:#f8fafc;
       color:#0f172a;
@@ -168,6 +171,23 @@
   }
 
   $hasCtx = EmpresaScope::has();
+
+  $nombreMostrar = trim((string) (
+    $user->name
+    ?? $user->nombre
+    ?? $user->nombre_completo
+    ?? 'Usuario'
+  ));
+
+  $partes = preg_split('/\s+/', $nombreMostrar, -1, PREG_SPLIT_NO_EMPTY);
+
+  $iniciales = 'U';
+
+  if (!empty($partes[0]) && !empty($partes[1])) {
+      $iniciales = strtoupper(substr($partes[0], 0, 1) . substr($partes[1], 0, 1));
+  } elseif (!empty($partes[0])) {
+      $iniciales = strtoupper(substr($partes[0], 0, 1));
+  }
 @endphp
 
 <div class="h-screen w-full flex overflow-hidden">
@@ -310,16 +330,17 @@
 
           {{-- User --}}
           @auth
-            <div class="hidden sm:flex items-center gap-3 bg-white border border-slate-200 rounded-full px-3 py-1 shadow-sm hover:shadow transition">
-              <div class="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-600 to-indigo-800 text-white grid place-items-center font-bold shadow">
-                {{ strtoupper(substr($user->name ?? 'U', 0, 1)) }}
-              </div>
-              <div class="leading-tight">
-                <div class="text-sm font-bold text-slate-800">{{ $user->name }}</div>
-                <div class="text-xs text-slate-500">{{ $user->email }}</div>
-              </div>
-            </div>
-
+<div class="hidden sm:flex items-center gap-3 bg-white border border-slate-200 rounded-full px-3 py-1 shadow-sm hover:shadow transition">
+  <div style="width:36px;height:36px;border-radius:9999px;background:#1d4ed8;color:#ffffff;display:grid;place-items:center;font-weight:700;font-size:14px;">
+  {{ $iniciales }}
+  </div>
+  <div class="leading-tight">
+    <div class="text-sm font-bold text-slate-800">
+      {{ $user->name ?? $user->nombre ?? $user->nombre_completo ?? 'Usuario' }}
+    </div>
+    <div class="text-xs text-slate-500">{{ $user->email }}</div>
+  </div>
+</div>
             <form method="POST" action="{{ route('logout') }}">
               @csrf
               <button class="inline-flex items-center gap-2 rounded-xl px-4 h-11 text-sm font-semibold bg-slate-900 text-white hover:bg-slate-800 shadow-md transition">

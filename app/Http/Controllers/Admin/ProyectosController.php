@@ -4,245 +4,214 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Proyecto;
-use App\Models\Empresa;
 use App\Models\User;
 use App\Support\EmpresaScope;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\Schema;
 
 class ProyectosController extends Controller
 {
+    /**
+     * Obtener empresa activa
+     */
     private function empresaIdOrAbort(): int
     {
         $user = auth()->user();
 
-        $scopeEmpresaId = (int) EmpresaScope::getId();
-        $userEmpresaId  = (int) ($user->empresa_id ?? 0);
+        $isSuperAdmin = method_exists($user, 'hasRole')
+            ? $user->hasRole('SuperAdmin')
+            : false;
 
-        $empresaId = $scopeEmpresaId ?: $userEmpresaId;
+        $empresaId = $isSuperAdmin
+            ? EmpresaScope::getId()
+            : ($user->empresa_id ?? null);
 
-        abort_if($empresaId <= 0, 403, 'No hay empresa seleccionada o asociada al usuario.');
+        abort_if(!$empresaId, 403, 'No hay empresa seleccionada.');
 
-        return $empresaId;
+        return (int) $empresaId;
     }
 
     /**
-     * Detecta el campo de nombre en users
+     * Campo nombre dinámico
      */
     private function userNameField(): string
     {
-        if (Schema::hasColumn('users', 'name')) return 'name';
-        if (Schema::hasColumn('users', 'nombre')) return 'nombre';
-        if (Schema::hasColumn('users', 'nombre_completo')) return 'nombre_completo';
-
-        return 'id'; // fallback
+        return 'name';
     }
 
+    /**
+     * LISTADO
+     */
     public function index()
     {
         $empresaId = $this->empresaIdOrAbort();
 
-        $q      = trim((string) request('q', ''));
-        $estado = trim((string) request('estado', ''));
-
-        $proyectos = Proyecto::with(['responsable'])
+        $proyectos = Proyecto::with('responsable')
             ->where('empresa_id', $empresaId)
-            ->when($q !== '', function ($query) use ($q) {
-                $query->where(function ($qq) use ($q) {
-                    $qq->where('codigo', 'like', "%{$q}%")
-                        ->orWhere('nombre', 'like', "%{$q}%")
-                        ->orWhere('ubicacion', 'like', "%{$q}%")
-                        ->orWhere('descripcion', 'like', "%{$q}%");
-                });
-            })
-            ->when($estado !== '', function ($query) use ($estado) {
-                $query->where('estado', $estado);
-            })
-            ->orderByDesc('id')
+            ->latest()
             ->paginate(15)
             ->withQueryString();
 
         return view('admin.proyectos.index', compact('proyectos'));
     }
 
+    /**
+     * CREAR
+     */
     public function create()
     {
         $empresaId = $this->empresaIdOrAbort();
         $nameField = $this->userNameField();
 
-        if (auth()->user()->can('empresas.ver')) {
-            $empresas = Empresa::orderBy('nombre')->get();
-        } else {
-            $empresas = Empresa::where('id', $empresaId)->get();
-        }
-
-        $usuarios = User::query()
-            ->where('empresa_id', $empresaId)
+        $usuarios = User::where('empresa_id', $empresaId)
             ->orderBy($nameField)
             ->get();
 
-        return view('admin.proyectos.create', compact('empresas', 'empresaId', 'usuarios', 'nameField'));
+        return view('admin.proyectos.create', compact('usuarios', 'nameField'));
     }
 
+    /**
+     * GUARDAR
+     */
     public function store(Request $request)
     {
         $empresaId = $this->empresaIdOrAbort();
 
-        $empresaToSave = auth()->user()->can('empresas.ver')
-            ? (int) $request->input('empresa_id')
-            : $empresaId;
-
         $data = $request->validate([
-            'codigo'         => ['nullable', 'string', 'max:40'],
-            'nombre'         => ['required', 'string', 'max:160'],
-            'descripcion'    => ['nullable', 'string'],
-            'ubicacion'      => ['nullable', 'string', 'max:220'],
-            'responsable_id' => ['nullable', 'integer', Rule::exists('users', 'id')],
-            'fecha_inicio'   => ['nullable', 'date'],
-            'fecha_fin'      => ['nullable', 'date'],
-            'estado'         => ['required', Rule::in([
-                Proyecto::ESTADO_PLANEADO,
-                Proyecto::ESTADO_EJECUCION,
-                Proyecto::ESTADO_PAUSADO,
-                Proyecto::ESTADO_FINALIZADO,
-            ])],
-            'presupuesto'    => ['nullable', 'numeric', 'min:0'],
+            'codigo'         => 'nullable|string|max:50',
+            'nombre'         => 'required|string|max:150',
+            'descripcion'    => 'nullable|string',
+            'ubicacion'      => 'nullable|string',
+            'fecha_inicio'   => 'nullable|date',
+            'fecha_fin'      => 'nullable|date',
+            'responsable_id' => 'nullable|exists:users,id',
+            'presupuesto'    => 'nullable|numeric',
         ]);
 
-        $data['responsable_id'] = $this->usuarioPerteneceEmpresa($request->input('responsable_id'), $empresaToSave)
-            ? $request->input('responsable_id')
-            : null;
-
-        $data['empresa_id']  = $empresaToSave;
-        $data['presupuesto'] = (float) ($data['presupuesto'] ?? 0);
-        $data['activo']      = $request->boolean('activo');
-
-        if (!empty($data['fecha_inicio']) && !empty($data['fecha_fin'])) {
-            if (strtotime($data['fecha_fin']) < strtotime($data['fecha_inicio'])) {
-                return back()
-                    ->withErrors(['fecha_fin' => 'La fecha fin no puede ser menor que la fecha inicio.'])
-                    ->withInput();
-            }
-        }
+        $data['empresa_id'] = $empresaId;
+        $data['estado'] = Proyecto::ESTADO_PLANEADO;
+        $data['activo'] = 1;
 
         Proyecto::create($data);
 
         return redirect()
             ->route('admin.proyectos')
-            ->with('ok', '✅ Proyecto creado correctamente.');
+            ->with('ok', 'Proyecto creado correctamente');
     }
-public function show($id)
-{
-    $empresaId = $this->empresaIdOrAbort();
 
-    $proyecto = Proyecto::with([
-            'responsable',
-            'fases',
-            'tareas.responsable',
-            'tareas.fase'
-        ])
-        ->where('empresa_id', $empresaId)
-        ->findOrFail($id);
-
-    $nameField = $this->userNameField();
-
-    $usuarios = \App\Models\User::query()
-        ->where('empresa_id', $empresaId)
-        ->orderBy($nameField)
-        ->get();
-
-    $stats = [
-        'tareas_total'       => $proyecto->tareas->count(),
-        'tareas_pendientes'  => $proyecto->tareas->where('estado', 'pendiente')->count(),
-        'tareas_proceso'     => $proyecto->tareas->where('estado', 'en_proceso')->count(),
-        'tareas_finalizadas' => $proyecto->tareas->where('estado', 'finalizada')->count(),
-        'tareas_pausadas'    => $proyecto->tareas->where('estado', 'pausada')->count(),
-        'fases_total'        => $proyecto->fases->count(),
-        'fases_completadas'  => $proyecto->fases->filter(fn($f) => (float)$f->porcentaje >= 100)->count(),
-    ];
-
-    return view('admin.proyectos.show', compact('proyecto', 'usuarios', 'nameField', 'stats'));
-}
+    /**
+     * EDITAR
+     */
     public function edit($id)
     {
         $empresaId = $this->empresaIdOrAbort();
         $nameField = $this->userNameField();
 
-        $proyecto = Proyecto::where('empresa_id', $empresaId)->findOrFail($id);
+        $proyecto = Proyecto::where('empresa_id', $empresaId)
+            ->findOrFail($id);
 
-        if (auth()->user()->can('empresas.ver')) {
-            $empresas = Empresa::orderBy('nombre')->get();
-        } else {
-            $empresas = Empresa::where('id', $empresaId)->get();
-        }
-
-        $usuarios = User::query()
-            ->where('empresa_id', $proyecto->empresa_id)
+        $usuarios = User::where('empresa_id', $empresaId)
             ->orderBy($nameField)
             ->get();
 
-        return view('admin.proyectos.edit', compact('proyecto', 'empresas', 'empresaId', 'usuarios', 'nameField'));
+        return view('admin.proyectos.edit', compact('proyecto', 'usuarios', 'nameField'));
     }
 
+    /**
+     * ACTUALIZAR
+     */
     public function update(Request $request, $id)
     {
         $empresaId = $this->empresaIdOrAbort();
 
-        $proyecto = Proyecto::where('empresa_id', $empresaId)->findOrFail($id);
-
-        $empresaToSave = auth()->user()->can('empresas.ver')
-            ? (int) $request->input('empresa_id')
-            : $empresaId;
+        $proyecto = Proyecto::where('empresa_id', $empresaId)
+            ->findOrFail($id);
 
         $data = $request->validate([
-            'codigo'         => ['nullable', 'string', 'max:40'],
-            'nombre'         => ['required', 'string', 'max:160'],
-            'descripcion'    => ['nullable', 'string'],
-            'ubicacion'      => ['nullable', 'string', 'max:220'],
-            'responsable_id' => ['nullable', 'integer', Rule::exists('users', 'id')],
-            'fecha_inicio'   => ['nullable', 'date'],
-            'fecha_fin'      => ['nullable', 'date'],
-            'estado'         => ['required', Rule::in([
-                Proyecto::ESTADO_PLANEADO,
-                Proyecto::ESTADO_EJECUCION,
-                Proyecto::ESTADO_PAUSADO,
-                Proyecto::ESTADO_FINALIZADO,
-            ])],
-            'presupuesto'    => ['nullable', 'numeric', 'min:0'],
+            'codigo'         => 'nullable|string|max:50',
+            'nombre'         => 'required|string|max:150',
+            'descripcion'    => 'nullable|string',
+            'ubicacion'      => 'nullable|string',
+            'fecha_inicio'   => 'nullable|date',
+            'fecha_fin'      => 'nullable|date',
+            'estado'         => 'required|string',
+            'responsable_id' => 'nullable|exists:users,id',
+            'presupuesto'    => 'nullable|numeric',
         ]);
-
-        $data['responsable_id'] = $this->usuarioPerteneceEmpresa($request->input('responsable_id'), $empresaToSave)
-            ? $request->input('responsable_id')
-            : null;
-
-        $data['empresa_id']  = $empresaToSave;
-        $data['presupuesto'] = (float) ($data['presupuesto'] ?? 0);
-        $data['activo']      = $request->boolean('activo');
-
-        if (!empty($data['fecha_inicio']) && !empty($data['fecha_fin'])) {
-            if (strtotime($data['fecha_fin']) < strtotime($data['fecha_inicio'])) {
-                return back()
-                    ->withErrors(['fecha_fin' => 'La fecha fin no puede ser menor que la fecha inicio.'])
-                    ->withInput();
-            }
-        }
 
         $proyecto->update($data);
 
         return redirect()
-            ->route('admin.proyectos.edit', $proyecto->id)
-            ->with('ok', '✅ Proyecto actualizado correctamente.');
+            ->route('admin.proyectos.show', $proyecto->id)
+            ->with('ok', 'Proyecto actualizado');
     }
 
-    private function usuarioPerteneceEmpresa($userId, int $empresaId): bool
+    /**
+     * DETALLE (SHOW)
+     */
+    public function show($id)
     {
-        if (empty($userId)) {
-            return false;
-        }
+        $empresaId = $this->empresaIdOrAbort();
 
-        return User::where('id', $userId)
+        $proyecto = Proyecto::with([
+                'responsable',
+                'fases',
+                'tareas.responsable',
+                'tareas.fase',
+                'costos',
+                'cuentasPorPagar',
+            ])
             ->where('empresa_id', $empresaId)
-            ->exists();
+            ->findOrFail($id);
+
+        $nameField = $this->userNameField();
+
+        $usuarios = User::where('empresa_id', $empresaId)
+            ->orderBy($nameField)
+            ->get();
+
+        // =========================
+        // STATS
+        // =========================
+        $stats = [
+            'tareas_total'       => $proyecto->tareas->count(),
+            'tareas_pendientes'  => $proyecto->tareas->where('estado', 'pendiente')->count(),
+            'tareas_proceso'     => $proyecto->tareas->where('estado', 'en_proceso')->count(),
+            'tareas_finalizadas' => $proyecto->tareas->where('estado', 'finalizada')->count(),
+            'tareas_pausadas'    => $proyecto->tareas->where('estado', 'pausada')->count(),
+            'fases_total'        => $proyecto->fases->count(),
+            'fases_completadas'  => $proyecto->fases->filter(fn($f) => (float)$f->porcentaje >= 100)->count(),
+        ];
+
+        // =========================
+        // COSTOS
+        // =========================
+        $costos = $proyecto->costos()
+            ->latest('fecha')
+            ->latest('id')
+            ->get();
+
+        // =========================
+        // FINANZAS
+        // =========================
+        $presupuesto = (float) ($proyecto->presupuesto ?? 0);
+        $ejecutado   = (float) $costos->sum('monto');
+
+        $finanzas = [
+            'presupuesto'          => round($presupuesto, 2),
+            'ejecutado'            => round($ejecutado, 2),
+            'saldo_disponible'     => round($presupuesto - $ejecutado, 2),
+            'porcentaje_consumido' => $presupuesto > 0
+                ? round(($ejecutado / $presupuesto) * 100, 2)
+                : 0,
+        ];
+
+        return view('admin.proyectos.show', compact(
+            'proyecto',
+            'usuarios',
+            'nameField',
+            'stats',
+            'costos',
+            'finanzas'
+        ));
     }
 }

@@ -25,6 +25,8 @@ use App\Http\Controllers\Admin\ProyectosController;
 use App\Http\Controllers\Admin\MiEmpresaController;
 use App\Http\Controllers\Admin\ProyectoFaseController;
 use App\Http\Controllers\Admin\ProyectoTareaController;
+use App\Http\Controllers\Admin\ProyectoCostoController;
+use App\Http\Controllers\Admin\CuentaPorPagarController;
 
 /*
 |--------------------------------------------------------------------------
@@ -247,7 +249,7 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | PROYECTOS
+    | PROYECTOS Y CUENTAS POR PAGAR
     |--------------------------------------------------------------------------
     */
     Route::prefix('admin')
@@ -301,6 +303,59 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
             Route::delete('proyectos/tareas/{tarea}', [ProyectoTareaController::class, 'destroy'])
                 ->middleware('permission:proyectos.editar')
                 ->name('proyectos.tareas.destroy');
+
+            Route::post('proyectos/costos', [ProyectoCostoController::class, 'store'])
+                ->middleware('permission:proyectos.editar')
+                ->name('proyectos.costos.store');
+
+            Route::get('proyectos/costos/{costo}/edit', [ProyectoCostoController::class, 'edit'])
+                ->middleware('permission:proyectos.editar')
+                ->name('proyectos.costos.edit');
+
+            Route::put('proyectos/costos/{costo}', [ProyectoCostoController::class, 'update'])
+                ->middleware('permission:proyectos.editar')
+                ->name('proyectos.costos.update');
+
+            Route::delete('proyectos/costos/{costo}', [ProyectoCostoController::class, 'destroy'])
+                ->middleware('permission:proyectos.editar')
+                ->name('proyectos.costos.destroy');
+
+            Route::get('cuentas', [CuentaPorPagarController::class, 'index'])
+                ->middleware('permission:proyectos.ver')
+                ->name('cuentas.index');
+
+            Route::post('cuentas/store', [CuentaPorPagarController::class, 'store'])
+                ->middleware('permission:proyectos.editar')
+                ->name('cuentas.store');
+
+            Route::post('cuentas/{id}/pagar', [CuentaPorPagarController::class, 'pagar'])
+                ->middleware('permission:proyectos.editar')
+                ->name('cuentas.pagar');
+
+               Route::delete('cuentas/{id}', [CuentaPorPagarController::class, 'destroy'])
+    ->middleware('permission:proyectos.editar')
+    ->name('cuentas.destroy'); 
+
+    Route::get('cuentas/{id}/edit', [CuentaPorPagarController::class, 'edit'])
+    ->name('cuentas.edit');
+
+    Route::put('cuentas/{id}', [CuentaPorPagarController::class, 'update'])
+    ->name('cuentas.update');
+
+    Route::get('cuentas/{id}/show', [CuentaPorPagarController::class, 'show'])
+    ->name('cuentas.show');
+
+    Route::get('cuentas/exportar', [CuentaPorPagarController::class, 'exportar'])
+    ->name('cuentas.exportar');
+    
+    Route::get('cuentas/reporte/proveedores', [CuentaPorPagarController::class, 'reporteProveedores'])
+    ->middleware('permission:proyectos.ver')
+    ->name('cuentas.reporte.proveedores');
+
+
+    Route::get('cuentas/flujo-caja', [CuentaPorPagarController::class, 'flujoCaja'])
+    ->middleware('permission:proyectos.ver')
+    ->name('cuentas.flujo');
         });
 
     /*
