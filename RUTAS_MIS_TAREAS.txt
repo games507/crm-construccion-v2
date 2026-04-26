@@ -1,0 +1,10 @@
+// Agrega estas rutas dentro del grupo Route::prefix('admin')->name('admin.')->group(...)
+// IMPORTANTE: colócalas ANTES de Route::get('proyectos/{proyecto}', ...)
+
+Route::get('proyectos/mis-tareas', [ProyectoTareaController::class, 'misTareas'])
+    ->middleware('permission:proyectos.ver')
+    ->name('proyectos.mis_tareas');
+
+Route::put('proyectos/mis-tareas/{id}', [ProyectoTareaController::class, 'updateMisTarea'])
+    ->middleware('permission:proyectos.editar')
+    ->name('proyectos.mis_tareas.update');

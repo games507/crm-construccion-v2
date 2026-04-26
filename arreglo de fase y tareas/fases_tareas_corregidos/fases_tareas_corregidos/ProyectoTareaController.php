@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Proyecto;
+use App\Models\ProyectoFase;
 use App\Models\ProyectoTarea;
 use App\Models\User;
 use App\Notifications\TareaAsignadaNotification;
@@ -14,13 +15,24 @@ class ProyectoTareaController extends Controller
 {
     private function userNameField(): string
     {
-        if (Schema::hasColumn('users', 'name')) return 'name';
-        if (Schema::hasColumn('users', 'nombre')) return 'nombre';
-        if (Schema::hasColumn('users', 'nombre_completo')) return 'nombre_completo';
+        if (Schema::hasColumn('users', 'name')) {
+            return 'name';
+        }
+
+        if (Schema::hasColumn('users', 'nombre')) {
+            return 'nombre';
+        }
+
+        if (Schema::hasColumn('users', 'nombre_completo')) {
+            return 'nombre_completo';
+        }
 
         return 'id';
     }
 
+    /**
+     * Recalcula el porcentaje de una fase y del proyecto completo
+     */
     private function recalcularProgresoProyecto(int $proyectoId): void
     {
         $proyecto = Proyecto::with('fases.tareas')->find($proyectoId);
@@ -41,9 +53,9 @@ class ProyectoTareaController extends Controller
         if ((float) $proyecto->porcentaje >= 100) {
             $proyecto->estado = 'finalizado';
         } elseif ((float) $proyecto->porcentaje > 0) {
-            $proyecto->estado = 'en_ejecucion';
+            $proyecto->estado = 'en_proceso';
         } else {
-            $proyecto->estado = 'planeado';
+            $proyecto->estado = 'pendiente';
         }
 
         $proyecto->save();
@@ -81,8 +93,10 @@ class ProyectoTareaController extends Controller
 
         $tarea = ProyectoTarea::create($data);
 
+        // Recalcular progreso del proyecto/fases
         $this->recalcularProgresoProyecto((int) $tarea->proyecto_id);
 
+        // 🔔 Notificación al responsable asignado
         if (!empty($tarea->responsable_id)) {
             $user = User::find($tarea->responsable_id);
 
@@ -94,6 +108,10 @@ class ProyectoTareaController extends Controller
         return back()->with('ok', 'Tarea agregada correctamente.');
     }
 
+    /**
+     * Actualización rápida desde el detalle del proyecto
+     * Solo porcentaje + estado
+     */
     public function update(Request $request)
     {
         $data = $request->validate([
@@ -115,11 +133,15 @@ class ProyectoTareaController extends Controller
             'estado'     => $data['estado'],
         ]);
 
+        // Recalcular progreso del proyecto/fases
         $this->recalcularProgresoProyecto((int) $tarea->proyecto_id);
 
         return back()->with('ok', 'Tarea actualizada correctamente.');
     }
 
+    /**
+     * Formulario de edición completa
+     */
     public function edit($id)
     {
         $tarea = ProyectoTarea::with(['proyecto.fases'])->findOrFail($id);
@@ -139,12 +161,12 @@ class ProyectoTareaController extends Controller
         return view('admin.proyectos.tareas.edit', compact('tarea', 'usuarios', 'fases', 'nameField'));
     }
 
+    /**
+     * Guardado de edición completa
+     */
     public function updateFull(Request $request, $id)
     {
-        $tarea = ProyectoTarea::findOrFail($id);
-
-        $responsableAnterior = $tarea->responsable_id;
-        $proyectoAnterior = $tarea->proyecto_id;
+        $tarea = ProyectoTarea::with('proyecto')->findOrFail($id);
 
         $data = $request->validate([
             'fase_id'        => ['nullable', 'exists:proyecto_fases,id'],
@@ -173,14 +195,20 @@ class ProyectoTareaController extends Controller
             }
         }
 
+        $responsableAnterior = $tarea->responsable_id;
+        $proyectoAnterior = $tarea->proyecto_id;
+
         $tarea->update($data);
 
+        // Recalcular proyecto actual
         $this->recalcularProgresoProyecto((int) $tarea->proyecto_id);
 
+        // Si por alguna razón cambió de proyecto, recalcular el anterior también
         if ((int) $proyectoAnterior !== (int) $tarea->proyecto_id) {
             $this->recalcularProgresoProyecto((int) $proyectoAnterior);
         }
 
+        // 🔔 Notificar si cambió el responsable
         if (!empty($data['responsable_id']) && (int) $data['responsable_id'] !== (int) $responsableAnterior) {
             $user = User::find($data['responsable_id']);
 
@@ -194,117 +222,6 @@ class ProyectoTareaController extends Controller
             ->with('ok', 'Tarea editada correctamente.');
     }
 
-    public function misTareas(Request $request)
-    {
-        $user = auth()->user();
-
-        abort_if(!$user, 403);
-
-        $q = trim((string) $request->get('q', ''));
-        $estado = trim((string) $request->get('estado', ''));
-        $proyectoId = trim((string) $request->get('proyecto_id', ''));
-        $vencidas = $request->boolean('vencidas');
-
-        $tareasQuery = ProyectoTarea::query()
-            ->with(['proyecto', 'fase', 'responsable'])
-            ->where('responsable_id', $user->id);
-
-        if ($q !== '') {
-            $tareasQuery->where(function ($qq) use ($q) {
-                $qq->where('nombre', 'like', "%{$q}%")
-                    ->orWhere('descripcion', 'like', "%{$q}%")
-                    ->orWhereHas('proyecto', function ($p) use ($q) {
-                        $p->where('nombre', 'like', "%{$q}%");
-                    })
-                    ->orWhereHas('fase', function ($f) use ($q) {
-                        $f->where('nombre', 'like', "%{$q}%");
-                    });
-            });
-        }
-
-        if ($estado !== '') {
-            $tareasQuery->where('estado', $estado);
-        }
-
-        if ($proyectoId !== '') {
-            $tareasQuery->where('proyecto_id', (int) $proyectoId);
-        }
-
-        if ($vencidas) {
-            $tareasQuery->whereNotNull('fecha_fin')
-                ->whereDate('fecha_fin', '<', now()->toDateString())
-                ->where('estado', '!=', ProyectoTarea::ESTADO_FINALIZADA);
-        }
-
-        $tareas = $tareasQuery
-            ->orderByRaw("CASE WHEN fecha_fin IS NULL THEN 1 ELSE 0 END")
-            ->orderBy('fecha_fin')
-            ->latest('id')
-            ->get();
-
-        $todasMisTareas = ProyectoTarea::query()
-            ->where('responsable_id', $user->id)
-            ->get();
-
-        $stats = [
-            'total' => $todasMisTareas->count(),
-            'pendientes' => $todasMisTareas->where('estado', ProyectoTarea::ESTADO_PENDIENTE)->count(),
-            'en_proceso' => $todasMisTareas->where('estado', ProyectoTarea::ESTADO_EN_PROCESO)->count(),
-            'finalizadas' => $todasMisTareas->where('estado', ProyectoTarea::ESTADO_FINALIZADA)->count(),
-            'vencidas' => $todasMisTareas->filter(function ($t) {
-                return $t->fecha_fin
-                    && $t->fecha_fin->lt(now()->startOfDay())
-                    && $t->estado !== ProyectoTarea::ESTADO_FINALIZADA;
-            })->count(),
-        ];
-
-        $proyectos = Proyecto::query()
-            ->whereIn('id', $todasMisTareas->pluck('proyecto_id')->filter()->unique()->values())
-            ->orderBy('nombre')
-            ->get(['id', 'nombre']);
-
-        return view('admin.proyectos.tareas.mis_tareas', compact(
-            'tareas',
-            'stats',
-            'proyectos',
-            'q',
-            'estado',
-            'proyectoId',
-            'vencidas'
-        ));
-    }
-
-    public function updateMisTarea(Request $request, $id)
-    {
-        $user = auth()->user();
-
-        abort_if(!$user, 403);
-
-        $tarea = ProyectoTarea::where('responsable_id', $user->id)->findOrFail($id);
-
-        $data = $request->validate([
-            'estado'     => ['required', 'in:pendiente,en_proceso,finalizada,pausada'],
-            'porcentaje' => ['nullable', 'numeric', 'min:0', 'max:100'],
-        ]);
-
-        $porcentaje = isset($data['porcentaje']) && $data['porcentaje'] !== ''
-            ? (float) $data['porcentaje']
-            : (float) $tarea->porcentaje;
-
-        if ($data['estado'] === ProyectoTarea::ESTADO_FINALIZADA) {
-            $porcentaje = 100;
-        }
-
-        $tarea->update([
-            'estado' => $data['estado'],
-            'porcentaje' => $porcentaje,
-        ]);
-
-        $this->recalcularProgresoProyecto((int) $tarea->proyecto_id);
-
-        return back()->with('ok', 'Tarea actualizada correctamente.');
-    }
-
     public function destroy($id)
     {
         $tarea = ProyectoTarea::findOrFail($id);
@@ -312,6 +229,7 @@ class ProyectoTareaController extends Controller
 
         $tarea->delete();
 
+        // Recalcular progreso del proyecto/fases
         $this->recalcularProgresoProyecto((int) $proyectoId);
 
         return redirect()

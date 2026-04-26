@@ -29,16 +29,15 @@
     </div>
   @endif
 
-  {{-- FORMULARIO --}}
   <div class="bg-white p-6 rounded-2xl shadow border">
 
+    {{-- FORM PRINCIPAL --}}
     <form method="POST" action="{{ route('admin.proyectos.tareas.updateFull', $tarea->id) }}">
       @csrf
       @method('PUT')
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-        {{-- NOMBRE --}}
         <div class="md:col-span-2">
           <label class="text-sm font-semibold text-slate-600">Nombre</label>
           <input type="text" name="nombre"
@@ -46,35 +45,30 @@
             class="mt-1 w-full h-11 rounded-xl border px-3">
         </div>
 
-        {{-- FASE --}}
         <div>
           <label class="text-sm font-semibold text-slate-600">Fase</label>
           <select name="fase_id" class="mt-1 w-full h-11 rounded-xl border px-3">
             <option value="">Sin fase</option>
             @foreach($fases as $fase)
-              <option value="{{ $fase->id }}"
-                @selected($tarea->fase_id == $fase->id)>
+              <option value="{{ $fase->id }}" @selected($tarea->fase_id == $fase->id)>
                 {{ $fase->nombre }}
               </option>
             @endforeach
           </select>
         </div>
 
-        {{-- RESPONSABLE --}}
         <div>
           <label class="text-sm font-semibold text-slate-600">Responsable</label>
           <select name="responsable_id" class="mt-1 w-full h-11 rounded-xl border px-3">
             <option value="">Sin responsable</option>
             @foreach($usuarios as $u)
-              <option value="{{ $u->id }}"
-                @selected($tarea->responsable_id == $u->id)>
+              <option value="{{ $u->id }}" @selected($tarea->responsable_id == $u->id)>
                 {{ $u->{$nameField} ?? ('Usuario '.$u->id) }}
               </option>
             @endforeach
           </select>
         </div>
 
-        {{-- ESTADO --}}
         <div>
           <label class="text-sm font-semibold text-slate-600">Estado</label>
           <select name="estado" class="mt-1 w-full h-11 rounded-xl border px-3">
@@ -85,7 +79,6 @@
           </select>
         </div>
 
-        {{-- PORCENTAJE --}}
         <div>
           <label class="text-sm font-semibold text-slate-600">% Avance</label>
           <input type="number" step="0.01" name="porcentaje"
@@ -93,7 +86,6 @@
             class="mt-1 w-full h-11 rounded-xl border px-3">
         </div>
 
-        {{-- FECHA INICIO --}}
         <div>
           <label class="text-sm font-semibold text-slate-600">Fecha Inicio</label>
           <input type="date" name="fecha_inicio"
@@ -101,7 +93,6 @@
             class="mt-1 w-full h-11 rounded-xl border px-3">
         </div>
 
-        {{-- FECHA FIN --}}
         <div>
           <label class="text-sm font-semibold text-slate-600">Fecha Fin</label>
           <input type="date" name="fecha_fin"
@@ -109,7 +100,6 @@
             class="mt-1 w-full h-11 rounded-xl border px-3">
         </div>
 
-        {{-- DESCRIPCIÓN --}}
         <div class="md:col-span-2">
           <label class="text-sm font-semibold text-slate-600">Descripción</label>
           <textarea name="descripcion" rows="4"
@@ -118,27 +108,33 @@
 
       </div>
 
-      {{-- BOTONES --}}
-      <div class="mt-6 flex justify-between items-center">
+      <div class="mt-6 flex justify-end gap-2">
 
-        {{-- ELIMINAR --}}
-        <form method="POST" action="{{ route('admin.proyectos.tareas.destroy', $tarea->id) }}"
-              onsubmit="return confirm('¿Eliminar esta tarea?')">
-          @csrf
-          @method('DELETE')
+        <a href="{{ route('admin.proyectos.show', $tarea->proyecto_id) }}"
+           class="bg-slate-200 px-4 py-2 rounded-xl text-sm">
+           Cancelar
+        </a>
 
-          <button class="bg-red-600 text-white px-4 py-2 rounded-xl text-sm">
-            Eliminar
-          </button>
-        </form>
-
-        {{-- GUARDAR --}}
-        <button class="bg-indigo-600 text-white px-6 py-2 rounded-xl font-semibold">
+        <button type="submit"
+          class="bg-indigo-600 text-white px-6 py-2 rounded-xl font-semibold">
           Guardar cambios
         </button>
 
       </div>
 
+    </form>
+
+    {{-- 🔴 FORM ELIMINAR SEPARADO --}}
+    <form method="POST"
+          action="{{ route('admin.proyectos.tareas.destroy', $tarea->id) }}"
+          class="mt-4"
+          onsubmit="return confirm('¿Eliminar esta tarea?')">
+      @csrf
+      @method('DELETE')
+
+      <button class="bg-red-600 text-white px-4 py-2 rounded-xl text-sm">
+        Eliminar tarea
+      </button>
     </form>
 
   </div>

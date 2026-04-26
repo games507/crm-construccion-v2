@@ -6,6 +6,7 @@ use App\Exports\CuentasExport;
 use App\Http\Controllers\Controller;
 use App\Models\CuentaPago;
 use App\Models\CuentaPorPagar;
+use App\Models\Ingreso;
 use App\Models\Proyecto;
 use App\Support\EmpresaScope;
 use Illuminate\Http\Request;
@@ -198,52 +199,136 @@ class CuentaPorPagarController extends Controller
             'cuentas_por_pagar_' . now()->format('Ymd_His') . '.xlsx'
         );
     }
+
     public function reporteProveedores()
-{
-    $empresaId = $this->empresaIdOrAbort();
+    {
+        $empresaId = $this->empresaIdOrAbort();
 
-    $cuentas = \App\Models\CuentaPorPagar::with('proyecto')
-        ->whereHas('proyecto', function ($q) use ($empresaId) {
-            $q->where('empresa_id', $empresaId);
-        })
-        ->get()
-        ->groupBy('proveedor');
+        $cuentas = CuentaPorPagar::with('proyecto')
+            ->whereHas('proyecto', function ($q) use ($empresaId) {
+                $q->where('empresa_id', $empresaId);
+            })
+            ->get()
+            ->groupBy('proveedor');
 
-    return view('admin.cuentas.reporte_proveedores', compact('cuentas'));
-}
-public function flujoCaja()
-{
-    $empresaId = $this->empresaIdOrAbort();
-
-    $cuentas = \App\Models\CuentaPorPagar::with('pagos')
-        ->whereHas('proyecto', function ($q) use ($empresaId) {
-            $q->where('empresa_id', $empresaId);
-        })
-        ->get();
-
-    // INGRESOS (pagos realizados)
-    $ingresos = $cuentas->flatMap->pagos;
-
-    // EGRESOS (deuda generada)
-    $egresos = $cuentas;
-
-    // AGRUPAR POR MES
-    $meses = [];
-
-    foreach ($ingresos as $pago) {
-        $mes = \Carbon\Carbon::parse($pago->fecha)->format('Y-m');
-        $meses[$mes]['ingresos'] = ($meses[$mes]['ingresos'] ?? 0) + $pago->monto;
+        return view('admin.cuentas.reporte_proveedores', compact('cuentas'));
     }
 
-    foreach ($egresos as $c) {
-        if ($c->fecha) {
-            $mes = \Carbon\Carbon::parse($c->fecha)->format('Y-m');
-            $meses[$mes]['egresos'] = ($meses[$mes]['egresos'] ?? 0) + $c->monto_total;
+    public function flujoCaja()
+    {
+        $empresaId = $this->empresaIdOrAbort();
+
+        $cuentas = CuentaPorPagar::with(['proyecto', 'pagos'])
+            ->whereHas('proyecto', function ($q) use ($empresaId) {
+                $q->where('empresa_id', $empresaId);
+            })
+            ->get();
+
+        $ingresos = Ingreso::where('empresa_id', $empresaId)->get();
+
+        $meses = [];
+
+        /*
+        |--------------------------------------------------------------------------
+        | INGRESOS REALES
+        |--------------------------------------------------------------------------
+        | Son cobros registrados en el módulo de ingresos.
+        |--------------------------------------------------------------------------
+        */
+        foreach ($ingresos as $ingreso) {
+            if (!$ingreso->fecha) {
+                continue;
+            }
+
+            $mes = \Carbon\Carbon::parse($ingreso->fecha)->format('Y-m');
+
+            if (!isset($meses[$mes])) {
+                $meses[$mes] = [
+                    'ingresos'  => 0,
+                    'egresos'   => 0,
+                    'pendiente' => 0,
+                    'vencido'   => 0,
+                ];
+            }
+
+            $meses[$mes]['ingresos'] += (float) $ingreso->monto;
         }
+
+        /*
+        |--------------------------------------------------------------------------
+        | EGRESOS REALES
+        |--------------------------------------------------------------------------
+        | Solo los pagos realizados salen de caja.
+        | Una cuenta pendiente NO es egreso hasta que se paga.
+        |--------------------------------------------------------------------------
+        */
+        foreach ($cuentas as $cuenta) {
+            foreach ($cuenta->pagos as $pago) {
+                if (!$pago->fecha) {
+                    continue;
+                }
+
+                $mes = \Carbon\Carbon::parse($pago->fecha)->format('Y-m');
+
+                if (!isset($meses[$mes])) {
+                    $meses[$mes] = [
+                        'ingresos'  => 0,
+                        'egresos'   => 0,
+                        'pendiente' => 0,
+                        'vencido'   => 0,
+                    ];
+                }
+
+                $meses[$mes]['egresos'] += (float) $pago->monto;
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | PENDIENTES Y VENCIDOS
+        |--------------------------------------------------------------------------
+        | Informativo: no afecta caja hasta que se registre el pago.
+        |--------------------------------------------------------------------------
+        */
+        $totalPendiente = (float) $cuentas->sum('saldo');
+
+        $totalVencido = (float) $cuentas->filter(function ($c) {
+            return $c->fecha_vencimiento
+                && $c->fecha_vencimiento->lt(now()->startOfDay())
+                && (float) $c->saldo > 0;
+        })->sum('saldo');
+
+        foreach ($cuentas as $cuenta) {
+            if (!$cuenta->fecha_vencimiento) {
+                continue;
+            }
+
+            $mes = \Carbon\Carbon::parse($cuenta->fecha_vencimiento)->format('Y-m');
+
+            if (!isset($meses[$mes])) {
+                $meses[$mes] = [
+                    'ingresos'  => 0,
+                    'egresos'   => 0,
+                    'pendiente' => 0,
+                    'vencido'   => 0,
+                ];
+            }
+
+            $saldo = (float) $cuenta->saldo;
+
+            $meses[$mes]['pendiente'] += $saldo;
+
+            if ($cuenta->fecha_vencimiento->lt(now()->startOfDay()) && $saldo > 0) {
+                $meses[$mes]['vencido'] += $saldo;
+            }
+        }
+
+        ksort($meses);
+
+        return view('admin.cuentas.flujo_caja', compact(
+            'meses',
+            'totalPendiente',
+            'totalVencido'
+        ));
     }
-
-    ksort($meses);
-
-    return view('admin.cuentas.flujo_caja', compact('meses'));
-}
 }

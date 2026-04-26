@@ -1,0 +1,35 @@
+// Rutas necesarias para fases y tareas.
+// Deben ir dentro del grupo:
+// Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () { ... });
+
+Route::post('proyectos/fases', [ProyectoFaseController::class, 'store'])
+    ->middleware('permission:proyectos.editar')
+    ->name('proyectos.fases.store');
+
+Route::put('proyectos/fases/{id}', [ProyectoFaseController::class, 'update'])
+    ->middleware('permission:proyectos.editar')
+    ->name('proyectos.fases.update');
+
+Route::delete('proyectos/fases/{id}', [ProyectoFaseController::class, 'destroy'])
+    ->middleware('permission:proyectos.editar')
+    ->name('proyectos.fases.destroy');
+
+Route::post('proyectos/tareas', [ProyectoTareaController::class, 'store'])
+    ->middleware('permission:proyectos.editar')
+    ->name('proyectos.tareas.store');
+
+Route::post('proyectos/tareas/update', [ProyectoTareaController::class, 'update'])
+    ->middleware('permission:proyectos.editar')
+    ->name('proyectos.tareas.update');
+
+Route::get('proyectos/tareas/{id}/edit', [ProyectoTareaController::class, 'edit'])
+    ->middleware('permission:proyectos.editar')
+    ->name('proyectos.tareas.edit');
+
+Route::put('proyectos/tareas/{id}', [ProyectoTareaController::class, 'updateFull'])
+    ->middleware('permission:proyectos.editar')
+    ->name('proyectos.tareas.updateFull');
+
+Route::delete('proyectos/tareas/{id}', [ProyectoTareaController::class, 'destroy'])
+    ->middleware('permission:proyectos.editar')
+    ->name('proyectos.tareas.destroy');

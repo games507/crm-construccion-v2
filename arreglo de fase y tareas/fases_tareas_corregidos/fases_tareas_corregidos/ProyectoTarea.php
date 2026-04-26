@@ -45,22 +45,4 @@ class ProyectoTarea extends Model
     {
         return $this->belongsTo(User::class, 'responsable_id');
     }
-
-    public function getEstaVencidaAttribute(): bool
-    {
-        return $this->fecha_fin
-            && $this->fecha_fin->lt(now()->startOfDay())
-            && $this->estado !== self::ESTADO_FINALIZADA;
-    }
-
-    public function getEstadoLabelAttribute(): string
-    {
-        return match ($this->estado) {
-            self::ESTADO_PENDIENTE => 'Pendiente',
-            self::ESTADO_EN_PROCESO => 'En proceso',
-            self::ESTADO_FINALIZADA => 'Finalizada',
-            self::ESTADO_PAUSADA => 'Pausada',
-            default => ucfirst((string) $this->estado),
-        };
-    }
 }

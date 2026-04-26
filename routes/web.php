@@ -27,6 +27,7 @@ use App\Http\Controllers\Admin\ProyectoFaseController;
 use App\Http\Controllers\Admin\ProyectoTareaController;
 use App\Http\Controllers\Admin\ProyectoCostoController;
 use App\Http\Controllers\Admin\CuentaPorPagarController;
+use App\Http\Controllers\Admin\IngresoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -41,7 +42,7 @@ Route::get('/home', function () {
 
 /*
 |--------------------------------------------------------------------------
-| AUTH (GUEST)
+| AUTH
 |--------------------------------------------------------------------------
 */
 Route::middleware('guest')->group(function () {
@@ -49,27 +50,17 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [LoginController::class, 'store'])->name('login.store');
 });
 
-/*
-|--------------------------------------------------------------------------
-| LOGOUT
-|--------------------------------------------------------------------------
-*/
 Route::post('/logout', [LoginController::class, 'destroy'])
     ->middleware('auth')
     ->name('logout');
 
 /*
 |--------------------------------------------------------------------------
-| APP (AUTH) TODO BAJO /app
+| APP
 |--------------------------------------------------------------------------
 */
 Route::prefix('app')->middleware(['auth'])->group(function () {
 
-    /*
-    |--------------------------------------------------------------------------
-    | DASHBOARD
-    |--------------------------------------------------------------------------
-    */
     Route::get('/', DashboardController::class)->name('dashboard');
 
     /*
@@ -105,7 +96,7 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | SUPER ADMIN - CONTEXTO DE EMPRESA
+    | CONTEXTO EMPRESA
     |--------------------------------------------------------------------------
     */
     Route::post('/admin/empresa-context', [EmpresaContextController::class, 'set'])
@@ -142,7 +133,7 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | EMPRESAS (SOLO SUPERADMIN)
+    | EMPRESAS
     |--------------------------------------------------------------------------
     */
     Route::prefix('admin')
@@ -170,7 +161,7 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | ADMIN / CONFIGURACIÓN GLOBAL
+    | CONFIGURACIÓN GLOBAL
     |--------------------------------------------------------------------------
     */
     Route::prefix('admin')
@@ -249,13 +240,18 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | PROYECTOS Y CUENTAS POR PAGAR
+    | PROYECTOS / FINANZAS
     |--------------------------------------------------------------------------
     */
     Route::prefix('admin')
         ->name('admin.')
         ->group(function () {
 
+            /*
+            |--------------------------------------------------------------------------
+            | PROYECTOS
+            |--------------------------------------------------------------------------
+            */
             Route::get('proyectos', [ProyectosController::class, 'index'])
                 ->middleware('permission:proyectos.ver')
                 ->name('proyectos');
@@ -267,6 +263,20 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
             Route::post('proyectos', [ProyectosController::class, 'store'])
                 ->middleware('permission:proyectos.crear')
                 ->name('proyectos.store');
+
+            /*
+            |--------------------------------------------------------------------------
+            | MIS TAREAS
+            | IMPORTANTE: va antes de proyectos/{proyecto}
+            |--------------------------------------------------------------------------
+            */
+            Route::get('proyectos/mis-tareas', [ProyectoTareaController::class, 'misTareas'])
+                ->middleware('permission:proyectos.ver')
+                ->name('proyectos.mis_tareas');
+
+            Route::put('proyectos/mis-tareas/{id}', [ProyectoTareaController::class, 'updateMisTarea'])
+                ->middleware('permission:proyectos.editar')
+                ->name('proyectos.mis_tareas.update');
 
             Route::get('proyectos/{proyecto}', [ProyectosController::class, 'show'])
                 ->middleware('permission:proyectos.ver')
@@ -280,10 +290,28 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
                 ->middleware('permission:proyectos.editar')
                 ->name('proyectos.update');
 
+            /*
+            |--------------------------------------------------------------------------
+            | FASES
+            |--------------------------------------------------------------------------
+            */
             Route::post('proyectos/fases', [ProyectoFaseController::class, 'store'])
                 ->middleware('permission:proyectos.editar')
                 ->name('proyectos.fases.store');
 
+            Route::put('proyectos/fases/{id}', [ProyectoFaseController::class, 'update'])
+                ->middleware('permission:proyectos.editar')
+                ->name('proyectos.fases.update');
+
+            Route::delete('proyectos/fases/{id}', [ProyectoFaseController::class, 'destroy'])
+                ->middleware('permission:proyectos.editar')
+                ->name('proyectos.fases.destroy');
+
+            /*
+            |--------------------------------------------------------------------------
+            | TAREAS
+            |--------------------------------------------------------------------------
+            */
             Route::post('proyectos/tareas', [ProyectoTareaController::class, 'store'])
                 ->middleware('permission:proyectos.editar')
                 ->name('proyectos.tareas.store');
@@ -292,18 +320,23 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
                 ->middleware('permission:proyectos.editar')
                 ->name('proyectos.tareas.update');
 
-            Route::get('proyectos/tareas/{tarea}/edit', [ProyectoTareaController::class, 'edit'])
+            Route::get('proyectos/tareas/{id}/edit', [ProyectoTareaController::class, 'edit'])
                 ->middleware('permission:proyectos.editar')
                 ->name('proyectos.tareas.edit');
 
-            Route::put('proyectos/tareas/{tarea}', [ProyectoTareaController::class, 'updateFull'])
+            Route::put('proyectos/tareas/{id}', [ProyectoTareaController::class, 'updateFull'])
                 ->middleware('permission:proyectos.editar')
                 ->name('proyectos.tareas.updateFull');
 
-            Route::delete('proyectos/tareas/{tarea}', [ProyectoTareaController::class, 'destroy'])
+            Route::delete('proyectos/tareas/{id}', [ProyectoTareaController::class, 'destroy'])
                 ->middleware('permission:proyectos.editar')
                 ->name('proyectos.tareas.destroy');
 
+            /*
+            |--------------------------------------------------------------------------
+            | COSTOS
+            |--------------------------------------------------------------------------
+            */
             Route::post('proyectos/costos', [ProyectoCostoController::class, 'store'])
                 ->middleware('permission:proyectos.editar')
                 ->name('proyectos.costos.store');
@@ -320,6 +353,11 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
                 ->middleware('permission:proyectos.editar')
                 ->name('proyectos.costos.destroy');
 
+            /*
+            |--------------------------------------------------------------------------
+            | CUENTAS POR PAGAR
+            |--------------------------------------------------------------------------
+            */
             Route::get('cuentas', [CuentaPorPagarController::class, 'index'])
                 ->middleware('permission:proyectos.ver')
                 ->name('cuentas.index');
@@ -328,34 +366,50 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
                 ->middleware('permission:proyectos.editar')
                 ->name('cuentas.store');
 
+            Route::get('cuentas/exportar', [CuentaPorPagarController::class, 'exportar'])
+                ->middleware('permission:proyectos.ver')
+                ->name('cuentas.exportar');
+
+            Route::get('cuentas/reporte/proveedores', [CuentaPorPagarController::class, 'reporteProveedores'])
+                ->middleware('permission:proyectos.ver')
+                ->name('cuentas.reporte.proveedores');
+
+            Route::get('cuentas/flujo-caja', [CuentaPorPagarController::class, 'flujoCaja'])
+                ->middleware('permission:proyectos.ver')
+                ->name('cuentas.flujo');
+
             Route::post('cuentas/{id}/pagar', [CuentaPorPagarController::class, 'pagar'])
                 ->middleware('permission:proyectos.editar')
                 ->name('cuentas.pagar');
 
-               Route::delete('cuentas/{id}', [CuentaPorPagarController::class, 'destroy'])
-    ->middleware('permission:proyectos.editar')
-    ->name('cuentas.destroy'); 
+            Route::get('cuentas/{id}/edit', [CuentaPorPagarController::class, 'edit'])
+                ->middleware('permission:proyectos.editar')
+                ->name('cuentas.edit');
 
-    Route::get('cuentas/{id}/edit', [CuentaPorPagarController::class, 'edit'])
-    ->name('cuentas.edit');
+            Route::put('cuentas/{id}', [CuentaPorPagarController::class, 'update'])
+                ->middleware('permission:proyectos.editar')
+                ->name('cuentas.update');
 
-    Route::put('cuentas/{id}', [CuentaPorPagarController::class, 'update'])
-    ->name('cuentas.update');
+            Route::get('cuentas/{id}/show', [CuentaPorPagarController::class, 'show'])
+                ->middleware('permission:proyectos.ver')
+                ->name('cuentas.show');
 
-    Route::get('cuentas/{id}/show', [CuentaPorPagarController::class, 'show'])
-    ->name('cuentas.show');
+            Route::delete('cuentas/{id}', [CuentaPorPagarController::class, 'destroy'])
+                ->middleware('permission:proyectos.editar')
+                ->name('cuentas.destroy');
 
-    Route::get('cuentas/exportar', [CuentaPorPagarController::class, 'exportar'])
-    ->name('cuentas.exportar');
-    
-    Route::get('cuentas/reporte/proveedores', [CuentaPorPagarController::class, 'reporteProveedores'])
-    ->middleware('permission:proyectos.ver')
-    ->name('cuentas.reporte.proveedores');
+            /*
+            |--------------------------------------------------------------------------
+            | INGRESOS / COBROS
+            |--------------------------------------------------------------------------
+            */
+            Route::get('ingresos', [IngresoController::class, 'index'])
+                ->middleware('permission:proyectos.ver')
+                ->name('ingresos.index');
 
-
-    Route::get('cuentas/flujo-caja', [CuentaPorPagarController::class, 'flujoCaja'])
-    ->middleware('permission:proyectos.ver')
-    ->name('cuentas.flujo');
+            Route::post('ingresos', [IngresoController::class, 'store'])
+                ->middleware('permission:proyectos.editar')
+                ->name('ingresos.store');
         });
 
     /*
