@@ -91,55 +91,56 @@ class CuentaPorPagarController extends Controller
         return back()->with('ok', '✅ Cuenta registrada correctamente.');
     }
 
-    public function pagar(Request $request, $id)
-    {
-        $cuenta = $this->cuentaValidaOrAbort((int) $id);
+public function pagar(Request $request, $id)
+{
+    $cuenta = $this->cuentaValidaOrAbort((int) $id);
 
-        $data = $request->validate([
-            'monto'       => ['required', 'numeric', 'min:0.01'],
-            'fecha'       => ['nullable', 'date'],
-            'observacion' => ['nullable', 'string', 'max:255'],
-        ]);
+    $data = $request->validate([
+        'monto'       => ['required', 'numeric', 'min:0.01'],
+        'fecha'       => ['nullable', 'date'],
+        'observacion' => ['nullable', 'string', 'max:255'],
+    ]);
 
-        $monto = (float) $data['monto'];
-        $saldoActual = (float) $cuenta->saldo;
+    $monto = (float) $data['monto'];
+    $saldoActual = (float) $cuenta->saldo;
 
-        if ($monto > $saldoActual) {
-            return back()->withErrors([
-                'monto' => 'El pago no puede ser mayor al saldo pendiente.'
-            ])->withInput();
-        }
-
-        DB::transaction(function () use ($cuenta, $data, $monto) {
-            CuentaPago::create([
-                'cuenta_id'   => $cuenta->id,
-                'monto'       => $monto,
-                'fecha'       => $data['fecha'] ?? now()->toDateString(),
-                'observacion' => $data['observacion'] ?? 'Pago registrado',
-            ]);
-
-            $montoTotal = (float) $cuenta->monto_total;
-            $nuevoMontoPagado = (float) $cuenta->monto_pagado + $monto;
-            $nuevoSaldo = max($montoTotal - $nuevoMontoPagado, 0);
-
-            $estado = 'pendiente';
-
-            if ($nuevoSaldo <= 0) {
-                $estado = 'pagado';
-            } elseif ($nuevoMontoPagado > 0) {
-                $estado = 'parcial';
-            }
-
-            $cuenta->update([
-                'monto_pagado' => $nuevoMontoPagado,
-                'saldo'        => $nuevoSaldo,
-                'estado'       => $estado,
-            ]);
-        });
-
-        return back()->with('ok', '✅ Pago registrado correctamente.');
+    if ($monto > $saldoActual) {
+        return back()->withErrors([
+            'monto' => 'El pago no puede ser mayor al saldo pendiente.'
+        ])->withInput();
     }
 
+    \DB::transaction(function () use ($cuenta, $data, $monto) {
+
+        \App\Models\CuentaPago::create([
+            'cuenta_id'   => $cuenta->id,
+            'monto'       => $monto,
+            'fecha'       => now(), // 🔥 guarda fecha + hora real
+            'observacion' => $data['observacion'] ?? 'Pago registrado',
+            'user_id'     => auth()->id(), // 🔥 usuario que registra
+        ]);
+
+        $montoTotal = (float) $cuenta->monto_total;
+        $nuevoMontoPagado = (float) $cuenta->monto_pagado + $monto;
+        $nuevoSaldo = max($montoTotal - $nuevoMontoPagado, 0);
+
+        $estado = 'pendiente';
+
+        if ($nuevoSaldo <= 0) {
+            $estado = 'pagado';
+        } elseif ($nuevoMontoPagado > 0) {
+            $estado = 'parcial';
+        }
+
+        $cuenta->update([
+            'monto_pagado' => $nuevoMontoPagado,
+            'saldo'        => $nuevoSaldo,
+            'estado'       => $estado,
+        ]);
+    });
+
+    return back()->with('ok', '✅ Pago registrado correctamente.');
+}
     public function destroy($id)
     {
         $cuenta = $this->cuentaValidaOrAbort((int) $id);
