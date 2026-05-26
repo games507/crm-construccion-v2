@@ -3,11 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Almacen;
+use App\Models\CuentaPorCobrar;
+use App\Models\CuentaPorPagar;
 use App\Models\InvExistencia;
 use App\Models\InvMovimiento;
 use App\Models\Material;
+use App\Models\Proyecto;
+use App\Models\ProyectoCosto;
+use App\Models\ProyectoTarea;
+use App\Support\EmpresaScope;
 use Illuminate\Support\Facades\Schema;
-use App\Support\EmpresaScope; // ✅ contexto de empresa (SuperAdmin)
 
 class DashboardController extends Controller
 {
@@ -15,11 +20,6 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
-        // =========================
-        // Empresa efectiva (multiempresa)
-        // - SuperAdmin => contexto (session)
-        // - Admin Empresa => su empresa_id
-        // =========================
         $isSuperAdmin = false;
 
         if ($user) {
@@ -32,47 +32,36 @@ class DashboardController extends Controller
 
         $empresaId = $isSuperAdmin ? EmpresaScope::getId() : ($user->empresa_id ?? null);
 
-        // ✅ Si SuperAdmin no eligió empresa, no mostramos data mezclada
         if ($isSuperAdmin && !$empresaId) {
-            $kpis = [
-                'almacenes'            => 0,
-                'materiales'           => 0,
-                'stock_total'          => 0,
-                'valor_inventario'     => 0,
-                'proyectos'            => 0,
-                'proyectos_activos'    => 0,
-                'proyectos_finalizados'=> 0,
-                'tareas_pendientes'    => 0,
-                'tareas_vencidas'      => 0,
-                'movimientos_total'    => 0,
-            ];
-
-            return view('dashboard', [
-                'kpis'              => $kpis,
-                'ultimosMovs'       => collect(),
-                'topMateriales'     => collect(),
-                'proyectosRecientes'=> collect(),
-            ]);
+            return view('dashboard', $this->emptyData());
         }
 
-        // ✅ Si NO es superadmin y no tiene empresa, lo paramos
         if (!$isSuperAdmin && !$empresaId) {
             abort(403, 'Tu usuario no tiene empresa asignada.');
         }
 
-        // =========================
-        // KPIs INVENTARIO (FILTRADOS POR EMPRESA)
-        // =========================
+        /*
+        |--------------------------------------------------------------------------
+        | INVENTARIO
+        |--------------------------------------------------------------------------
+        */
         $almacenes = Almacen::where('empresa_id', $empresaId)->count();
-
         $materiales = Material::where('empresa_id', $empresaId)->count();
 
-        $stockTotal = (float) InvExistencia::where('empresa_id', $empresaId)->sum('stock');
+        $existenciaCantidadColumn = Schema::hasColumn('inv_existencias', 'stock')
+            ? 'stock'
+            : 'cantidad';
 
-        // Valor inventario = sum(stock * costo_promedio)
-        $valorInventario = (float) InvExistencia::where('empresa_id', $empresaId)
-            ->selectRaw('COALESCE(SUM(stock * costo_promedio),0) as v')
-            ->value('v');
+        $stockTotal = (float) InvExistencia::where('empresa_id', $empresaId)
+            ->sum($existenciaCantidadColumn);
+
+        $valorInventario = 0;
+
+        if (Schema::hasColumn('inv_existencias', 'costo_promedio')) {
+            $valorInventario = (float) InvExistencia::where('empresa_id', $empresaId)
+                ->selectRaw("COALESCE(SUM({$existenciaCantidadColumn} * costo_promedio),0) as total")
+                ->value('total');
+        }
 
         $movimientosTotal = InvMovimiento::where('empresa_id', $empresaId)->count();
 
@@ -80,113 +69,169 @@ class DashboardController extends Controller
             ->with(['material', 'almacenOrigen', 'almacenDestino'])
             ->orderByDesc('fecha')
             ->orderByDesc('id')
-            ->limit(3)
+            ->limit(5)
             ->get();
 
-        $topMateriales = InvExistencia::where('inv_existencias.empresa_id', $empresaId)
-            ->join('materiales', function ($j) use ($empresaId) {
-                $j->on('materiales.id', '=', 'inv_existencias.material_id')
-                  ->where('materiales.empresa_id', '=', $empresaId);
+        $topMateriales = collect();
+
+        try {
+            $topMateriales = InvExistencia::where('inv_existencias.empresa_id', $empresaId)
+                ->join('materiales', 'materiales.id', '=', 'inv_existencias.material_id')
+                ->selectRaw("
+                    materiales.codigo,
+                    materiales.descripcion,
+                    SUM(inv_existencias.{$existenciaCantidadColumn}) as stock,
+                    SUM(inv_existencias.{$existenciaCantidadColumn} * COALESCE(inv_existencias.costo_promedio,0)) as valor
+                ")
+                ->groupBy('materiales.codigo', 'materiales.descripcion')
+                ->orderByDesc('valor')
+                ->limit(6)
+                ->get();
+        } catch (\Throwable $e) {
+            $topMateriales = collect();
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | PROYECTOS
+        |--------------------------------------------------------------------------
+        */
+        $proyectosBase = Proyecto::where('empresa_id', $empresaId);
+
+        $proyectos = (clone $proyectosBase)->count();
+
+        $proyectosActivos = (clone $proyectosBase)
+            ->whereIn('estado', ['planeado', 'en_ejecucion', 'pausado'])
+            ->count();
+
+        $proyectosFinalizados = (clone $proyectosBase)
+            ->where('estado', 'finalizado')
+            ->count();
+
+        $proyectosEnEjecucion = (clone $proyectosBase)
+            ->where('estado', 'en_ejecucion')
+            ->count();
+
+        $presupuestoTotal = (float) (clone $proyectosBase)->sum('presupuesto');
+
+        $avancePromedio = (float) (clone $proyectosBase)->avg('porcentaje');
+
+        $proyectosRecientes = Proyecto::where('empresa_id', $empresaId)
+            ->with('responsable')
+            ->latest('id')
+            ->limit(5)
+            ->get();
+
+        /*
+        |--------------------------------------------------------------------------
+        | TAREAS
+        |--------------------------------------------------------------------------
+        */
+        $tareasBase = ProyectoTarea::query()
+            ->join('proyectos', 'proyectos.id', '=', 'proyecto_tareas.proyecto_id')
+            ->where('proyectos.empresa_id', $empresaId);
+
+        $tareasPendientes = (clone $tareasBase)
+            ->whereIn('proyecto_tareas.estado', ['pendiente', 'en_proceso', 'pausada'])
+            ->count();
+
+        $tareasFinalizadas = (clone $tareasBase)
+            ->where('proyecto_tareas.estado', 'finalizada')
+            ->count();
+
+        $tareasVencidas = (clone $tareasBase)
+            ->whereNotNull('proyecto_tareas.fecha_fin')
+            ->whereDate('proyecto_tareas.fecha_fin', '<', now()->toDateString())
+            ->whereIn('proyecto_tareas.estado', ['pendiente', 'en_proceso', 'pausada'])
+            ->count();
+
+        $tareasRecientes = ProyectoTarea::query()
+            ->with(['proyecto', 'responsable'])
+            ->whereHas('proyecto', function ($q) use ($empresaId) {
+                $q->where('empresa_id', $empresaId);
             })
-            ->selectRaw('
-                materiales.sku,
-                materiales.descripcion,
-                SUM(inv_existencias.stock) as stock,
-                SUM(inv_existencias.stock * inv_existencias.costo_promedio) as valor
-            ')
-            ->groupBy('materiales.sku', 'materiales.descripcion')
-            ->orderByDesc('valor')
-            ->limit(6)
+            ->latest('id')
+            ->limit(5)
             ->get();
 
-        // =========================
-        // KPIs PROYECTOS / TAREAS
-        // =========================
-        $proyectos = 0;
-        $proyectosActivos = 0;
-        $proyectosFinalizados = 0;
-        $tareasPendientes = 0;
-        $tareasVencidas = 0;
-        $proyectosRecientes = collect();
+        /*
+        |--------------------------------------------------------------------------
+        | COSTOS / FINANZAS
+        |--------------------------------------------------------------------------
+        */
+        $costosTotal = 0;
 
-        try {
-            if (class_exists(\App\Models\Proyecto::class)) {
-                $proyectoModel = \App\Models\Proyecto::query()
-                    ->where('empresa_id', $empresaId);
-
-                $proyectos = (clone $proyectoModel)->count();
-
-                if (Schema::hasColumn('proyectos', 'estado')) {
-                    $proyectosActivos = (clone $proyectoModel)
-                        ->whereIn('estado', ['planeado', 'en_ejecucion', 'pausado'])
-                        ->count();
-
-                    $proyectosFinalizados = (clone $proyectoModel)
-                        ->where('estado', 'finalizado')
-                        ->count();
-                }
-
-                $proyectosRecientes = \App\Models\Proyecto::query()
-                    ->where('empresa_id', $empresaId)
-                    ->latest('id')
-                    ->limit(5)
-                    ->get();
-            } elseif (class_exists(\App\Models\Project::class)) {
-                $proyectos = \App\Models\Project::where('empresa_id', $empresaId)->count();
-            }
-        } catch (\Throwable $e) {
-            $proyectos = 0;
-            $proyectosActivos = 0;
-            $proyectosFinalizados = 0;
-            $proyectosRecientes = collect();
+        if (Schema::hasTable('proyecto_costos')) {
+            $costosTotal = (float) ProyectoCosto::query()
+                ->join('proyectos', 'proyectos.id', '=', 'proyecto_costos.proyecto_id')
+                ->where('proyectos.empresa_id', $empresaId)
+                ->sum('proyecto_costos.monto');
         }
 
-        try {
-            if (class_exists(\App\Models\ProyectoTarea::class)) {
-                $tareaModel = \App\Models\ProyectoTarea::query()
-                    ->where('proyecto_tareas.empresa_id', $empresaId);
+        $cuentasPorPagarSaldo = 0;
+        $cuentasPorPagarVencidas = 0;
 
-                // Si tu tabla proyecto_tareas no tiene empresa_id,
-                // entonces hacemos filtro por proyecto
-                if (!Schema::hasColumn('proyecto_tareas', 'empresa_id')) {
-                    $tareaModel = \App\Models\ProyectoTarea::query()
-                        ->join('proyectos', 'proyectos.id', '=', 'proyecto_tareas.proyecto_id')
-                        ->where('proyectos.empresa_id', $empresaId);
-                }
+        if (Schema::hasTable('cuentas_por_pagar')) {
+            $cuentasPorPagarSaldo = (float) CuentaPorPagar::query()
+                ->join('proyectos', 'proyectos.id', '=', 'cuentas_por_pagar.proyecto_id')
+                ->where('proyectos.empresa_id', $empresaId)
+                ->sum('cuentas_por_pagar.saldo');
 
-                if (Schema::hasColumn('proyecto_tareas', 'estado')) {
-                    $tareasPendientes = (clone $tareaModel)
-                        ->whereIn('proyecto_tareas.estado', ['pendiente', 'en_proceso', 'pausada'])
-                        ->count();
-                }
-
-                if (Schema::hasColumn('proyecto_tareas', 'fecha_fin')) {
-                    $tareasVencidas = (clone $tareaModel)
-                        ->whereNotNull('proyecto_tareas.fecha_fin')
-                        ->whereDate('proyecto_tareas.fecha_fin', '<', now()->toDateString())
-                        ->whereIn('proyecto_tareas.estado', ['pendiente', 'en_proceso', 'pausada'])
-                        ->count();
-                }
-            }
-        } catch (\Throwable $e) {
-            $tareasPendientes = 0;
-            $tareasVencidas = 0;
+            $cuentasPorPagarVencidas = CuentaPorPagar::query()
+                ->join('proyectos', 'proyectos.id', '=', 'cuentas_por_pagar.proyecto_id')
+                ->where('proyectos.empresa_id', $empresaId)
+                ->whereNotNull('cuentas_por_pagar.fecha_vencimiento')
+                ->whereDate('cuentas_por_pagar.fecha_vencimiento', '<', now()->toDateString())
+                ->whereIn('cuentas_por_pagar.estado', ['pendiente', 'parcial'])
+                ->count();
         }
 
-        // =========================
-        // KPIs FINAL
-        // =========================
+        $cuentasPorCobrarSaldo = 0;
+        $cuentasPorCobrarVencidas = 0;
+
+        if (Schema::hasTable('cuentas_por_cobrar')) {
+            $cuentasPorCobrarSaldo = (float) CuentaPorCobrar::query()
+                ->join('proyectos', 'proyectos.id', '=', 'cuentas_por_cobrar.proyecto_id')
+                ->where('proyectos.empresa_id', $empresaId)
+                ->sum('cuentas_por_cobrar.saldo');
+
+            $cuentasPorCobrarVencidas = CuentaPorCobrar::query()
+                ->join('proyectos', 'proyectos.id', '=', 'cuentas_por_cobrar.proyecto_id')
+                ->where('proyectos.empresa_id', $empresaId)
+                ->whereNotNull('cuentas_por_cobrar.fecha_vencimiento')
+                ->whereDate('cuentas_por_cobrar.fecha_vencimiento', '<', now()->toDateString())
+                ->whereIn('cuentas_por_cobrar.estado', ['pendiente', 'parcial'])
+                ->count();
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | KPI FINAL
+        |--------------------------------------------------------------------------
+        */
         $kpis = [
-            'almacenes'             => $almacenes,
-            'materiales'            => $materiales,
-            'stock_total'           => $stockTotal,
-            'valor_inventario'      => $valorInventario,
-            'proyectos'             => $proyectos,
-            'proyectos_activos'     => $proyectosActivos,
-            'proyectos_finalizados' => $proyectosFinalizados,
-            'tareas_pendientes'     => $tareasPendientes,
-            'tareas_vencidas'       => $tareasVencidas,
-            'movimientos_total'     => $movimientosTotal,
+            'almacenes'                  => $almacenes,
+            'materiales'                 => $materiales,
+            'stock_total'                => $stockTotal,
+            'valor_inventario'           => $valorInventario,
+            'movimientos_total'          => $movimientosTotal,
+
+            'proyectos'                  => $proyectos,
+            'proyectos_activos'          => $proyectosActivos,
+            'proyectos_en_ejecucion'     => $proyectosEnEjecucion,
+            'proyectos_finalizados'      => $proyectosFinalizados,
+            'presupuesto_total'          => $presupuestoTotal,
+            'avance_promedio'            => $avancePromedio,
+
+            'tareas_pendientes'          => $tareasPendientes,
+            'tareas_finalizadas'         => $tareasFinalizadas,
+            'tareas_vencidas'            => $tareasVencidas,
+
+            'costos_total'               => $costosTotal,
+            'cuentas_por_pagar_saldo'    => $cuentasPorPagarSaldo,
+            'cuentas_por_pagar_vencidas' => $cuentasPorPagarVencidas,
+            'cuentas_por_cobrar_saldo'   => $cuentasPorCobrarSaldo,
+            'cuentas_por_cobrar_vencidas'=> $cuentasPorCobrarVencidas,
         ];
 
         return view('dashboard', [
@@ -194,6 +239,41 @@ class DashboardController extends Controller
             'ultimosMovs'        => $ultimosMovs,
             'topMateriales'      => $topMateriales,
             'proyectosRecientes' => $proyectosRecientes,
+            'tareasRecientes'    => $tareasRecientes,
         ]);
+    }
+
+    private function emptyData(): array
+    {
+        return [
+            'kpis' => [
+                'almacenes'                  => 0,
+                'materiales'                 => 0,
+                'stock_total'                => 0,
+                'valor_inventario'           => 0,
+                'movimientos_total'          => 0,
+
+                'proyectos'                  => 0,
+                'proyectos_activos'          => 0,
+                'proyectos_en_ejecucion'     => 0,
+                'proyectos_finalizados'      => 0,
+                'presupuesto_total'          => 0,
+                'avance_promedio'            => 0,
+
+                'tareas_pendientes'          => 0,
+                'tareas_finalizadas'         => 0,
+                'tareas_vencidas'            => 0,
+
+                'costos_total'               => 0,
+                'cuentas_por_pagar_saldo'    => 0,
+                'cuentas_por_pagar_vencidas' => 0,
+                'cuentas_por_cobrar_saldo'   => 0,
+                'cuentas_por_cobrar_vencidas'=> 0,
+            ],
+            'ultimosMovs'        => collect(),
+            'topMateriales'      => collect(),
+            'proyectosRecientes' => collect(),
+            'tareasRecientes'    => collect(),
+        ];
     }
 }

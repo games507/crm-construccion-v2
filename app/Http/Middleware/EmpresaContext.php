@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Empresa;
 use Closure;
 use Illuminate\Http\Request;
 
@@ -11,24 +12,37 @@ class EmpresaContext
     {
         $user = auth()->user();
 
-        // Solo aplica si está logueado
-        if (!$user) return $next($request);
-
-        // Detectar super admin (Spatie o columna)
-        $isSuperAdmin = false;
-        if (method_exists($user, 'hasRole')) {
-            $isSuperAdmin = $user->hasRole('SuperAdmin');
-        } elseif (isset($user->is_superadmin)) {
-            $isSuperAdmin = (bool) $user->is_superadmin;
+        if (!$user) {
+            return $next($request);
         }
 
-        // Si es Super Admin, permitimos contexto por sesión
-        if ($isSuperAdmin) {
-            // Si hay empresa en sesión, la inyectamos al request para que tus controllers la usen
-            $ctx = (int) session('empresa_ctx_id', 0);
-            if ($ctx > 0) {
-                // No modificamos el user en DB, solo contexto de request
+        $isSuperAdmin = false;
+
+        if (method_exists($user, 'hasRole') && $user->hasRole('SuperAdmin')) {
+            $isSuperAdmin = true;
+        }
+
+        if ((bool) ($user->is_superadmin ?? false)) {
+            $isSuperAdmin = true;
+        }
+
+        if (!$isSuperAdmin) {
+            session()->forget('empresa_ctx_id');
+            $request->attributes->remove('empresa_ctx_id');
+
+            return $next($request);
+        }
+
+        $ctx = (int) session('empresa_ctx_id', 0);
+
+        if ($ctx > 0) {
+            $empresaExiste = Empresa::where('id', $ctx)->exists();
+
+            if ($empresaExiste) {
                 $request->attributes->set('empresa_ctx_id', $ctx);
+            } else {
+                session()->forget('empresa_ctx_id');
+                $request->attributes->remove('empresa_ctx_id');
             }
         }
 

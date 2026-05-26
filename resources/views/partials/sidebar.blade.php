@@ -77,21 +77,24 @@
     $canPermisosEmpresa = $user && $user->can('permisos.ver');
 
     $canConfigEmpresaMenu = !$isSuperAdmin && ($canMiEmpresa || $canUsuariosEmpresa || $canRolesEmpresa || $canPermisosEmpresa);
-
-    $canInventarioPorPermiso = $user && (
-      $user->can('inventario.ver') ||
-      $user->can('materiales.ver') ||
-      $user->can('almacenes.ver') ||
-      $user->can('kardex.ver')
-    );
-
+$canInventarioPorPermiso = $user && (
+  $user->can('inventario.ver') ||
+  $user->can('materiales.ver') ||
+  $user->can('almacenes.ver') ||
+  $user->can('kardex.ver') ||
+  $user->can('movimientos.ver')
+);
     $canInventario = $isSuperAdmin
       ? $hasCtx
       : $canInventarioPorPermiso;
 
-    $canProyectos = $isSuperAdmin
-      ? $hasCtx
-      : ($user && $user->can('proyectos.ver'));
+$canProyectos = $isSuperAdmin
+  ? $hasCtx
+  : ($user && (
+      $user->can('proyectos.ver') ||
+      $user->can('mis_tareas.ver') ||
+      $user->can('cuentas.ver')
+  ));
 
     $logoPath = (string) ($empresa?->logo_path ?? '');
     $hasLogo = $logoPath !== '';
@@ -239,24 +242,63 @@
               <span>Listado</span>
             </a>
 
-            <a href="{{ route('admin.proyectos.mis_tareas') }}"
-               class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
-                      {{ request()->routeIs('admin.proyectos.mis_tareas*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-              <span class="h-4 w-4 {{ request()->routeIs('admin.proyectos.mis_tareas*') ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-700' }}">
-                {!! $icon('tasks') !!}
-              </span>
-              <span>Mis tareas</span>
-            </a>
+   @can('mis_tareas.ver')
+<a href="{{ route('admin.proyectos.mis_tareas') }}"
+   class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
+          {{ request()->routeIs('admin.proyectos.mis_tareas*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+  <span class="h-4 w-4 {{ request()->routeIs('admin.proyectos.mis_tareas*') ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-700' }}">
+    {!! $icon('tasks') !!}
+  </span>
+  <span>Mis tareas</span>
+</a>
+@endcan
+           @can('cuentas.ver')
+<a href="{{ route('admin.cuentas.index') }}"
+   class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
+          {{ request()->routeIs('admin.cuentas*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+  <span class="h-4 w-4 {{ request()->routeIs('admin.cuentas*') ? 'text-emerald-600' : 'text-slate-400 group-hover:text-slate-700' }}">
+    {!! $icon('money') !!}
+  </span>
+  
+  <span>Cuentas por pagar</span>
+</a>
+@can('cobros.ver')
+<a href="{{ route('admin.cobros.index') }}"
+   class="group flex items-center gap-3 px-3 py-2 rounded-2xl transition
+   {{ request()->routeIs('admin.cobros.*')
+      ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
 
-            <a href="{{ route('admin.cuentas.index') }}"
-               class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
-                      {{ request()->routeIs('admin.cuentas*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-              <span class="h-4 w-4 {{ request()->routeIs('admin.cuentas*') ? 'text-emerald-600' : 'text-slate-400 group-hover:text-slate-700' }}">
-                {!! $icon('money') !!}
-              </span>
-              <span>Cuentas por pagar</span>
-            </a>
+  <span class="flex h-9 w-9 items-center justify-center rounded-xl
+    {{ request()->routeIs('admin.cobros.*')
+      ? 'bg-emerald-100 text-emerald-700'
+      : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200' }}">
 
+    <svg xmlns="http://www.w3.org/2000/svg"
+         class="h-5 w-5"
+         fill="none"
+         viewBox="0 0 24 24"
+         stroke="currentColor"
+         stroke-width="2">
+      <path stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 8c-3.866 0-7 1.79-7 4s3.134 4 7 4 7-1.79 7-4-3.134-4-7-4Zm0 0V4m0 12v4" />
+    </svg>
+
+  </span>
+
+  <div class="flex-1 min-w-0">
+    <div class="truncate text-sm font-bold">
+      Cuentas por cobrar
+    </div>
+
+    <div class="truncate text-[11px] text-slate-400">
+      Clientes y cobros
+    </div>
+  </div>
+</a>
+@endcan
+@endcan
           </div>
         </div>
       </div>
@@ -337,6 +379,8 @@
       </div>
     @endif
 
+
+    
     {{-- INVENTARIO --}}
     @if($canInventario)
       <div class="pt-2">

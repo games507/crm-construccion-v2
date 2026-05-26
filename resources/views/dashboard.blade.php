@@ -1,5 +1,5 @@
 @extends('layouts.base')
-@section('title','Tu Tablero')
+@section('title','Dashboard Ejecutivo')
 
 @section('content')
 @php
@@ -7,602 +7,367 @@
   use App\Models\Empresa;
 
   $k = $kpis ?? [];
-
   $user = auth()->user();
 
-  // =========================
-  // Detectar SuperAdmin
-  // =========================
   $isSuperAdmin = false;
   if ($user) {
     if (method_exists($user, 'hasRole')) {
-      $isSuperAdmin = $user->hasRole('SuperAdmin');
+      $isSuperAdmin = $user->hasRole('SuperAdmin') || $user->hasRole('Super Admin');
     } elseif (isset($user->is_superadmin)) {
       $isSuperAdmin = (bool) $user->is_superadmin;
     }
   }
 
-  // =========================
-  // Empresa efectiva (para header)
-  // - SuperAdmin => empresa del contexto (session)
-  // - Admin Empresa => su empresa_id
-  // =========================
   $empresaId = $isSuperAdmin ? EmpresaScope::getId() : ($user->empresa_id ?? null);
+  $empresaObj = $empresaId ? Empresa::select('id','nombre')->find($empresaId) : null;
+  $empresaNombre = $empresaObj?->nombre ?? ($user?->empresa?->nombre ?? 'Sin empresa seleccionada');
 
-  $empresaObj = null;
-  if ($empresaId) {
-    // ✅ NO pedir razon_social (no existe en tu tabla)
-    $empresaObj = Empresa::select('id','nombre')->find($empresaId);
-  }
+  $money = fn($v) => '$' . number_format((float)$v, 2);
+  $num = fn($v) => number_format((float)$v, 0);
 
-  $empresaNombre = (string) (
-    $empresaObj?->nombre
-    ?? ($user?->empresa?->nombre ?? '—')
-  );
+  $avancePromedio = max(0, min(100, (float)($k['avance_promedio'] ?? 0)));
+  $valorInventario = (float)($k['valor_inventario'] ?? 0);
+  $presupuestoTotal = (float)($k['presupuesto_total'] ?? 0);
+  $costosTotal = (float)($k['costos_total'] ?? 0);
+  $saldoPagar = (float)($k['cuentas_por_pagar_saldo'] ?? 0);
+  $saldoCobrar = (float)($k['cuentas_por_cobrar_saldo'] ?? 0);
 
-  // =========================
-  // KPIs / Totales
-  // =========================
-  $totalMovs = (int) ($k['movimientos_total'] ?? 0);
-
-  // Fallback si el controller no manda total real (ojo: puede venir limitado)
-  if ($totalMovs <= 0) {
-    $totalMovs = isset($ultimosMovs) ? (is_countable($ultimosMovs) ? count($ultimosMovs) : 0) : 0;
-  }
-
-  $proyectosCount       = (int) ($k['proyectos'] ?? 0);
-  $proyectosActivos     = (int) ($k['proyectos_activos'] ?? 0);
-  $proyectosFinalizados = (int) ($k['proyectos_finalizados'] ?? 0);
-  $tareasPendientes     = (int) ($k['tareas_pendientes'] ?? 0);
-  $tareasVencidas       = (int) ($k['tareas_vencidas'] ?? 0);
-
-  // Valor inventario (para panel top materiales)
-  $valorInventario = (float) ($k['valor_inventario'] ?? 0);
-
-  // Colecciones seguras
-  $topMateriales      = $topMateriales ?? collect();
-  $ultimosMovs        = $ultimosMovs ?? collect();
   $proyectosRecientes = $proyectosRecientes ?? collect();
+  $ultimosMovs = $ultimosMovs ?? collect();
+  $topMateriales = $topMateriales ?? collect();
+
+  $icon = function($name) {
+    $attrs = 'xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+
+    return match($name) {
+      'building' => '<svg '.$attrs.'><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9h1"/><path d="M9 13h1"/><path d="M9 17h1"/></svg>',
+      'trend' => '<svg '.$attrs.'><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-7"/><path d="M15 6h4v4"/></svg>',
+      'box' => '<svg '.$attrs.'><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>',
+      'clock' => '<svg '.$attrs.'><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+      'wallet' => '<svg '.$attrs.'><path d="M20 12V8H6a2 2 0 0 1 0-4h12v4"/><path d="M4 6v14a2 2 0 0 0 2 2h14v-6"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>',
+      'receipt' => '<svg '.$attrs.'><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2Z"/><path d="M8 7h8"/><path d="M8 12h8"/><path d="M8 17h5"/></svg>',
+      'credit' => '<svg '.$attrs.'><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h2"/><path d="M10 15h4"/></svg>',
+      'coin' => '<svg '.$attrs.'><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>',
+      'inventory' => '<svg '.$attrs.'><path d="M3 7h18"/><path d="M5 7v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M9 13h6"/></svg>',
+      default => '<svg '.$attrs.'><circle cx="12" cy="12" r="10"/></svg>',
+    };
+  };
 @endphp
 
 <style>
-  .dash-wrap{max-width:1200px;margin:0 auto;padding:14px}
-  .dash-head{
-    display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;
-    background:#fff;border-radius:16px;padding:16px;
-    box-shadow:0 10px 30px rgba(0,0,0,.08);
-    border:1px solid rgba(15,23,42,.06);
+  .vs-dash{max-width:1420px;margin:0 auto;padding:18px}
+  .vs-hero{
+    position:relative;overflow:hidden;border-radius:30px;padding:24px;
+    background:
+      radial-gradient(circle at 15% 15%, rgba(34,211,238,.30), transparent 32%),
+      radial-gradient(circle at 88% 20%, rgba(59,130,246,.28), transparent 34%),
+      linear-gradient(135deg,#07172e 0%,#0b2f54 52%,#061425 100%);
+    color:white;box-shadow:0 24px 70px rgba(2,6,23,.22)
   }
-  .dash-title{margin:0;font-size:20px;font-weight:900;color:#0f172a}
-  .dash-sub{margin-top:6px;font-size:13px;color:#64748b}
-  .dash-sub strong{color:#0f172a}
+  .vs-hero:before{
+    content:"";position:absolute;inset:0;
+    background-image:linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);
+    background-size:38px 38px;opacity:.22
+  }
+  .vs-hero-inner{position:relative;z-index:1;display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+  .vs-eyebrow{font-size:11px;font-weight:900;letter-spacing:.18em;text-transform:uppercase;color:#93c5fd}
+  .vs-title{font-size:28px;line-height:1.1;font-weight:950;margin-top:8px}
+  .vs-sub{margin-top:8px;color:#cbd5e1;font-size:14px;max-width:720px}
+  .vs-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start}
+  .vs-btn{
+    height:42px;padding:0 14px;border-radius:15px;display:inline-flex;align-items:center;gap:9px;
+    text-decoration:none;font-size:13px;font-weight:900;border:1px solid rgba(255,255,255,.20);
+    color:#fff;background:rgba(255,255,255,.10);backdrop-filter:blur(10px)
+  }
+  .vs-btn:hover{background:rgba(255,255,255,.16);color:#fff}
 
-  .dash-actions{display:flex;gap:10px;flex-wrap:wrap}
-  .a-btn{
-    display:inline-flex;align-items:center;gap:10px;
-    height:42px;padding:0 14px;border-radius:14px;
-    font-weight:800;font-size:13px;text-decoration:none;
-    border:1px solid rgba(15,23,42,.10);
-    background:#fff;color:#0f172a;
-    box-shadow:0 10px 24px rgba(2,6,23,.06);
-    white-space:nowrap;
-    transition:.18s ease;
-  }
-  .a-btn:hover{transform:translateY(-1px)}
-  .a-ico{width:18px;height:18px;display:inline-block}
+  .vs-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;margin-top:16px}
+  .s3{grid-column:span 3}.s5{grid-column:span 5}.s6{grid-column:span 6}.s7{grid-column:span 7}
+  @media(max-width:1100px){.s3{grid-column:span 6}.s5,.s6,.s7{grid-column:span 12}}
+  @media(max-width:620px){.vs-dash{padding:12px}.s3{grid-column:span 12}.vs-title{font-size:23px}}
 
-  /* botones pastel suave */
-  .a-btn.soft{ border-color: rgba(15,23,42,.10); }
-  .a-btn.soft.m1{ background: rgba(99,102,241,.10); color:#1e1b4b; }
-  .a-btn.soft.m2{ background: rgba(34,197,94,.10);  color:#064e3b; }
-  .a-btn.soft.m3{ background: rgba(245,158,11,.10); color:#78350f; }
-  .a-btn.soft.m4{ background: rgba(14,165,233,.10); color:#0c4a6e; }
-
-  .grid12{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;margin-top:14px}
-  .span3{grid-column:span 3}
-  .span4{grid-column:span 4}
-  .span6{grid-column:span 6}
-  .span8{grid-column:span 8}
-  .span12{grid-column:span 12}
-  @media (max-width: 1024px){
-    .span3{grid-column:span 6}
-    .span4{grid-column:span 12}
-    .span6{grid-column:span 12}
-    .span8{grid-column:span 12}
-    .span12{grid-column:span 12}
+  .kpi{
+    border-radius:24px;background:rgba(255,255,255,.94);border:1px solid rgba(226,232,240,.9);
+    box-shadow:0 18px 45px rgba(15,23,42,.08);padding:18px;overflow:hidden;
+    transition:.22s ease
   }
-  @media (max-width: 560px){
-    .span3{grid-column:span 12}
+  .kpi:hover{transform:translateY(-3px);box-shadow:0 24px 55px rgba(15,23,42,.12)}
+  .kpi-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .ico{
+    width:46px;height:46px;border-radius:18px;display:flex;align-items:center;justify-content:center;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.55)
   }
-
-  .tile{
-    background:#fff;border-radius:16px;padding:16px;
-    box-shadow:0 18px 40px rgba(2,6,23,.10);
-    border:1px solid rgba(15,23,42,.06);
-    display:flex;align-items:center;justify-content:space-between;gap:10px;
-    min-height:92px;
-    overflow:hidden;
+  .i1{background:#dbeafe;color:#1d4ed8}.i2{background:#dcfce7;color:#047857}.i3{background:#fef3c7;color:#b45309}.i4{background:#ede9fe;color:#6d28d9}
+  .i5{background:#fee2e2;color:#dc2626}.i6{background:#cffafe;color:#0891b2}.i7{background:#e0e7ff;color:#4338ca}.i8{background:#fce7f3;color:#be185d}
+  .kpi-label{font-size:12px;color:#64748b;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
+  .kpi-value{font-size:27px;font-weight:950;color:#0f172a;margin-top:10px;line-height:1}
+  .kpi-note{font-size:12px;color:#64748b;margin-top:8px;font-weight:700}
+  .panel{
+    border-radius:26px;background:rgba(255,255,255,.94);border:1px solid rgba(226,232,240,.9);
+    box-shadow:0 18px 45px rgba(15,23,42,.08);padding:18px
   }
-  .tile-left{display:flex;align-items:center;gap:12px;min-width:0}
-  .tile-ico{
-    width:44px;height:44px;border-radius:14px;
-    display:flex;align-items:center;justify-content:center;
-    border:1px solid rgba(15,23,42,.08);
-    flex:0 0 auto;
-  }
-  .tile-val{
-    font-size:26px;font-weight:950;color:#0f172a;line-height:1;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    max-width:56%; text-align:right;
-  }
-  @media (max-width: 560px){
-    .tile-val{max-width:62%; font-size:22px;}
-  }
-  .tile-meta{margin-top:6px;font-size:12px;color:#64748b;font-weight:700}
-  .tile-name{display:none}
-
-  .p1{background:rgba(99,102,241,.12)}
-  .p2{background:rgba(34,197,94,.12)}
-  .p3{background:rgba(14,165,233,.12)}
-  .p4{background:rgba(245,158,11,.12)}
-  .p5{background:rgba(236,72,153,.12)}
-  .p6{background:rgba(239,68,68,.12)}
-  .p7{background:rgba(16,185,129,.12)}
-  .p8{background:rgba(168,85,247,.12)}
-
-  .cardx{
-    background:#fff;border-radius:16px;padding:16px;
-    box-shadow:0 18px 40px rgba(2,6,23,.10);
-    border:1px solid rgba(15,23,42,.06);
-  }
-  .muted{color:#64748b;font-size:12px}
-
-  .list{margin-top:12px;display:flex;flex-direction:column;gap:10px}
-  .item{
-    border:1px solid rgba(15,23,42,.08);
-    border-radius:14px;padding:12px;
-    background:rgba(2,6,23,.015);
-  }
-  .row{display:flex;justify-content:space-between;gap:10px}
-  .top-total{
-    margin-top:10px;
-    padding:12px;
-    border-radius:14px;
-    border:1px solid rgba(15,23,42,.08);
-    background:rgba(99,102,241,.06);
-    display:flex;justify-content:space-between;align-items:center;gap:10px;
-  }
-  .top-total .label{font-weight:900;color:#0f172a}
-  .top-total .amount{font-weight:950;color:#0f172a}
-
-  /* Cajón Movimientos con botón */
-  .mov-tile{
-    background:#fff;border-radius:16px;padding:14px 16px;
-    box-shadow:0 18px 40px rgba(2,6,23,.10);
-    border:1px solid rgba(15,23,42,.06);
-    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
-  }
-  .mov-left{display:flex;align-items:center;gap:12px;min-width:0}
-  .mov-title{font-weight:950;color:#0f172a}
-  .mov-total{font-size:22px;font-weight:950;color:#0f172a;white-space:nowrap}
-
-  .badge{
-    display:inline-flex;align-items:center;justify-content:center;
-    padding:4px 10px;border-radius:999px;
-    font-size:11px;font-weight:900;line-height:1;
-    border:1px solid transparent;
-    white-space:nowrap;
-  }
-  .b-green{background:#dcfce7;color:#065f46;border-color:#bbf7d0}
-  .b-yellow{background:#fef3c7;color:#92400e;border-color:#fde68a}
-  .b-red{background:#fee2e2;color:#991b1b;border-color:#fecaca}
-  .b-blue{background:#dbeafe;color:#1d4ed8;border-color:#bfdbfe}
-  .b-slate{background:#e2e8f0;color:#334155;border-color:#cbd5e1}
-
-  .mini-progress{
-    margin-top:8px;
-    width:100%;height:8px;border-radius:999px;
-    background:#e5e7eb;overflow:hidden;
-  }
-  .mini-progress > span{
-    display:block;height:100%;border-radius:999px;
-    background:linear-gradient(90deg,#3b82f6,#06b6d4);
-  }
-
-  .alert-item{
-    border-radius:14px;padding:12px 14px;font-weight:800;
-    border:1px solid transparent;
-  }
-  .alert-red{background:#fef2f2;color:#991b1b;border-color:#fecaca}
-  .alert-yellow{background:#fffbeb;color:#92400e;border-color:#fde68a}
-  .alert-green{background:#ecfdf5;color:#065f46;border-color:#bbf7d0}
+  .panel-title{font-weight:950;color:#0f172a;font-size:16px}
+  .panel-sub{font-size:12px;color:#64748b;margin-top:4px;font-weight:700}
+  .progress{height:10px;border-radius:999px;background:#e2e8f0;overflow:hidden}
+  .progress span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#0ea5e9,#2563eb,#06b6d4)}
+  .item{padding:13px;border-radius:18px;border:1px solid rgba(226,232,240,.95);background:#f8fafc;margin-top:10px}
+  .row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .strong{font-weight:950;color:#0f172a}.muted{font-size:12px;color:#64748b;font-weight:700}
+  .badge{display:inline-flex;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:950}
+  .b-green{background:#dcfce7;color:#166534}.b-yellow{background:#fef3c7;color:#92400e}.b-red{background:#fee2e2;color:#991b1b}.b-blue{background:#dbeafe;color:#1d4ed8}.b-slate{background:#e2e8f0;color:#334155}
+  .alert{padding:13px;border-radius:18px;margin-top:10px;font-size:13px;font-weight:900}
+  .alert-red{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+  .alert-yellow{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+  .alert-green{background:#ecfdf5;color:#065f46;border:1px solid #bbf7d0}
 </style>
 
-<div class="dash-wrap">
+<div class="vs-dash">
 
-  {{-- HEADER --}}
-  <div class="dash-head">
-    <div>
-      <h2 class="dash-title">Tu Tablero</h2>
-      <div class="dash-sub">
-        <strong>{{ $empresaNombre }}</strong>
-        @if($isSuperAdmin && !EmpresaScope::has())
-          <div class="muted" style="margin-top:6px;">
-            Estás como <b>SuperAdmin</b> sin contexto de empresa (selecciona una empresa en el sidebar).
+  <section class="vs-hero">
+    <div class="vs-hero-inner">
+      <div>
+        <div class="vs-eyebrow">VerticeSoft ERP / CRM</div>
+        <div class="vs-title">Dashboard Ejecutivo</div>
+        <div class="vs-sub">
+          Vista general de proyectos, inventario, tareas, costos y flujo financiero de
+          <strong>{{ $empresaNombre }}</strong>.
+        </div>
+      </div>
+
+      <div class="vs-actions">
+        <a class="vs-btn" href="{{ route('admin.proyectos') }}">Proyectos</a>
+        <a class="vs-btn" href="{{ route('inventario.existencias') }}">Inventario</a>
+        <a class="vs-btn" href="{{ route('admin.cuentas.index') }}">Cuentas por pagar</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="vs-grid">
+    <div class="s3">
+      <div class="kpi">
+        <div class="kpi-top">
+          <div>
+            <div class="kpi-label">Proyectos</div>
+            <div class="kpi-value">{{ $num($k['proyectos'] ?? 0) }}</div>
           </div>
+          <div class="ico i1">{!! $icon('building') !!}</div>
+        </div>
+        <div class="kpi-note">{{ $num($k['proyectos_activos'] ?? 0) }} activos</div>
+      </div>
+    </div>
+
+    <div class="s3">
+      <div class="kpi">
+        <div class="kpi-top">
+          <div>
+            <div class="kpi-label">Avance promedio</div>
+            <div class="kpi-value">{{ number_format($avancePromedio,0) }}%</div>
+          </div>
+          <div class="ico i2">{!! $icon('trend') !!}</div>
+        </div>
+        <div class="kpi-note"><div class="progress"><span style="width:{{ $avancePromedio }}%"></span></div></div>
+      </div>
+    </div>
+
+    <div class="s3">
+      <div class="kpi">
+        <div class="kpi-top">
+          <div>
+            <div class="kpi-label">Inventario</div>
+            <div class="kpi-value">{{ $money($valorInventario) }}</div>
+          </div>
+          <div class="ico i3">{!! $icon('box') !!}</div>
+        </div>
+        <div class="kpi-note">{{ $num($k['materiales'] ?? 0) }} materiales</div>
+      </div>
+    </div>
+
+    <div class="s3">
+      <div class="kpi">
+        <div class="kpi-top">
+          <div>
+            <div class="kpi-label">Tareas vencidas</div>
+            <div class="kpi-value" style="color:#dc2626">{{ $num($k['tareas_vencidas'] ?? 0) }}</div>
+          </div>
+          <div class="ico i5">{!! $icon('clock') !!}</div>
+        </div>
+        <div class="kpi-note">{{ $num($k['tareas_pendientes'] ?? 0) }} pendientes</div>
+      </div>
+    </div>
+
+    <div class="s3">
+      <div class="kpi">
+        <div class="kpi-top">
+          <div>
+            <div class="kpi-label">Presupuesto</div>
+            <div class="kpi-value">{{ $money($presupuestoTotal) }}</div>
+          </div>
+          <div class="ico i4">{!! $icon('wallet') !!}</div>
+        </div>
+        <div class="kpi-note">Presupuesto global</div>
+      </div>
+    </div>
+
+    <div class="s3">
+      <div class="kpi">
+        <div class="kpi-top">
+          <div>
+            <div class="kpi-label">Costos</div>
+            <div class="kpi-value">{{ $money($costosTotal) }}</div>
+          </div>
+          <div class="ico i6">{!! $icon('receipt') !!}</div>
+        </div>
+        <div class="kpi-note">Costos registrados</div>
+      </div>
+    </div>
+
+    <div class="s3">
+      <div class="kpi">
+        <div class="kpi-top">
+          <div>
+            <div class="kpi-label">Por pagar</div>
+            <div class="kpi-value">{{ $money($saldoPagar) }}</div>
+          </div>
+          <div class="ico i7">{!! $icon('credit') !!}</div>
+        </div>
+        <div class="kpi-note">{{ $num($k['cuentas_por_pagar_vencidas'] ?? 0) }} vencidas</div>
+      </div>
+    </div>
+
+    <div class="s3">
+      <div class="kpi">
+        <div class="kpi-top">
+          <div>
+            <div class="kpi-label">Por cobrar</div>
+            <div class="kpi-value">{{ $money($saldoCobrar) }}</div>
+          </div>
+          <div class="ico i8">{!! $icon('coin') !!}</div>
+        </div>
+        <div class="kpi-note">{{ $num($k['cuentas_por_cobrar_vencidas'] ?? 0) }} vencidas</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="vs-grid">
+
+    <div class="s7">
+      <div class="panel">
+        <div class="panel-title">Proyectos recientes</div>
+        <div class="panel-sub">Seguimiento ejecutivo de avance y estado</div>
+
+        @forelse($proyectosRecientes as $p)
+          @php
+            $estado = (string)($p->estado ?? 'planeado');
+            $porcentaje = max(0, min(100, (float)($p->porcentaje ?? 0)));
+            $badgeClass = match($estado) {
+              'finalizado' => 'b-green',
+              'en_ejecucion' => 'b-yellow',
+              'pausado' => 'b-red',
+              'planeado' => 'b-blue',
+              default => 'b-slate',
+            };
+          @endphp
+
+          <div class="item">
+            <div class="row">
+              <div style="flex:1;min-width:0">
+                <div class="strong">{{ $p->nombre ?? 'Proyecto' }}</div>
+                <div class="muted">{{ $p->codigo ?? 'Sin código' }} · {{ $p->responsable->name ?? $p->responsable->nombre ?? 'Sin responsable' }}</div>
+                <div class="progress" style="margin-top:10px"><span style="width:{{ $porcentaje }}%"></span></div>
+              </div>
+              <div style="text-align:right">
+                <span class="badge {{ $badgeClass }}">{{ ucfirst(str_replace('_',' ', $estado)) }}</span>
+                <div class="strong" style="margin-top:8px">{{ number_format($porcentaje,0) }}%</div>
+              </div>
+            </div>
+          </div>
+        @empty
+          <div class="item muted">No hay proyectos registrados todavía.</div>
+        @endforelse
+      </div>
+    </div>
+
+    <div class="s5">
+      <div class="panel">
+        <div class="panel-title">Alertas inteligentes</div>
+        <div class="panel-sub">Puntos críticos del sistema</div>
+
+        @if(($k['tareas_vencidas'] ?? 0) > 0)
+          <div class="alert alert-red">Tienes {{ $num($k['tareas_vencidas']) }} tarea(s) vencida(s).</div>
+        @endif
+
+        @if(($k['cuentas_por_pagar_vencidas'] ?? 0) > 0)
+          <div class="alert alert-red">Hay {{ $num($k['cuentas_por_pagar_vencidas']) }} cuenta(s) por pagar vencida(s).</div>
+        @endif
+
+        @if(($k['cuentas_por_cobrar_vencidas'] ?? 0) > 0)
+          <div class="alert alert-yellow">Hay {{ $num($k['cuentas_por_cobrar_vencidas']) }} cuenta(s) por cobrar vencida(s).</div>
+        @endif
+
+        @if(($k['proyectos_activos'] ?? 0) > 0)
+          <div class="alert alert-green">{{ $num($k['proyectos_activos']) }} proyecto(s) activos en seguimiento.</div>
+        @endif
+
+        @if(($k['tareas_vencidas'] ?? 0) <= 0 && ($k['cuentas_por_pagar_vencidas'] ?? 0) <= 0 && ($k['cuentas_por_cobrar_vencidas'] ?? 0) <= 0)
+          <div class="alert alert-green">Todo bajo control por ahora.</div>
         @endif
       </div>
     </div>
 
-    {{-- MENÚ CON ICONOS --}}
-    <div class="dash-actions">
+    <div class="s6">
+      <div class="panel">
+        <div class="panel-title">Últimos movimientos de inventario</div>
+        <div class="panel-sub">Actividad reciente de materiales</div>
 
-      <a class="a-btn soft m1" href="{{ route('inventario.materiales') }}" title="Materiales">
-        <span class="a-ico">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2 2 7l10 5 10-5-10-5Z"/>
-            <path d="M2 17l10 5 10-5"/>
-            <path d="M2 12l10 5 10-5"/>
-          </svg>
-        </span>
-        Material
-      </a>
-
-      <a class="a-btn soft m2" href="{{ route('inventario.almacenes') }}" title="Almacenes">
-        <span class="a-ico">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 21V8l9-4 9 4v13"/>
-            <path d="M3 10h18"/>
-            <path d="M9 21v-8h6v8"/>
-          </svg>
-        </span>
-        Almacén
-      </a>
-
-      <a class="a-btn soft m3" href="{{ route('admin.proyectos') }}" title="Proyectos">
-        <span class="a-ico">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>
-          </svg>
-        </span>
-        Proyecto
-      </a>
-
-      <a class="a-btn soft m4" href="{{ route('inventario.kardex') }}" title="Kardex">
-        <span class="a-ico">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M8 6h13M8 12h13M8 18h13"/>
-            <path d="M3 6h.01M3 12h.01M3 18h.01"/>
-          </svg>
-        </span>
-        Kardex
-      </a>
-
-    </div>
-  </div>
-
-  {{-- KPIs PRINCIPALES --}}
-  <div class="grid12">
-
-    <div class="span3">
-      <div class="tile" title="Almacenes">
-        <div class="tile-left">
-          <div class="tile-ico p1" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 21V8l9-4 9 4v13"/>
-              <path d="M9 21v-8h6v8"/>
-              <path d="M3 10h18"/>
-            </svg>
-          </div>
-          <div><div class="tile-name">Almacenes</div><div class="tile-meta">Almacén</div></div>
-        </div>
-        <div class="tile-val">{{ (int)($k['almacenes'] ?? 0) }}</div>
-      </div>
-    </div>
-
-    <div class="span3">
-      <div class="tile" title="Materiales">
-        <div class="tile-left">
-          <div class="tile-ico p2" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2 2 7l10 5 10-5-10-5Z"/>
-              <path d="M2 17l10 5 10-5"/>
-              <path d="M2 12l10 5 10-5"/>
-            </svg>
-          </div>
-          <div><div class="tile-name">Materiales</div><div class="tile-meta">Materiales</div></div>
-        </div>
-        <div class="tile-val">{{ (int)($k['materiales'] ?? 0) }}</div>
-      </div>
-    </div>
-
-    <div class="span3">
-      <div class="tile" title="Stock total">
-        <div class="tile-left">
-          <div class="tile-ico p3" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 3v18h18"/>
-              <path d="M7 14v4"/>
-              <path d="M12 10v8"/>
-              <path d="M17 6v12"/>
-            </svg>
-          </div>
-          <div><div class="tile-name">Stock total</div><div class="tile-meta">Unidades</div></div>
-        </div>
-        <div class="tile-val">{{ number_format((float)($k['stock_total'] ?? 0), 0) }}</div>
-      </div>
-    </div>
-
-    <div class="span3">
-      <div class="tile" title="Proyectos">
-        <div class="tile-left">
-          <div class="tile-ico p4" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>
-            </svg>
-          </div>
-          <div><div class="tile-name">Proyectos</div><div class="tile-meta">Proyectos</div></div>
-        </div>
-        <div class="tile-val">{{ number_format($proyectosCount, 0) }}</div>
-      </div>
-    </div>
-
-  </div>
-
-  {{-- KPIs DE PROYECTOS / TAREAS --}}
-  <div class="grid12">
-
-    <div class="span3">
-      <div class="tile" title="Proyectos activos">
-        <div class="tile-left">
-          <div class="tile-ico p5" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 20V10"/>
-              <path d="M18 20V4"/>
-              <path d="M6 20v-6"/>
-            </svg>
-          </div>
-          <div><div class="tile-name">Activos</div><div class="tile-meta">Proyectos activos</div></div>
-        </div>
-        <div class="tile-val">{{ $proyectosActivos }}</div>
-      </div>
-    </div>
-
-    <div class="span3">
-      <div class="tile" title="Proyectos finalizados">
-        <div class="tile-left">
-          <div class="tile-ico p7" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="m20 6-11 11-5-5"/>
-            </svg>
-          </div>
-          <div><div class="tile-name">Finalizados</div><div class="tile-meta">Finalizados</div></div>
-        </div>
-        <div class="tile-val">{{ $proyectosFinalizados }}</div>
-      </div>
-    </div>
-
-    <div class="span3">
-      <div class="tile" title="Tareas pendientes">
-        <div class="tile-left">
-          <div class="tile-ico p8" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 11l3 3L22 4"/>
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-            </svg>
-          </div>
-          <div><div class="tile-name">Pendientes</div><div class="tile-meta">Tareas pendientes</div></div>
-        </div>
-        <div class="tile-val">{{ $tareasPendientes }}</div>
-      </div>
-    </div>
-
-    <div class="span3">
-      <div class="tile" title="Tareas vencidas">
-        <div class="tile-left">
-          <div class="tile-ico p6" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 6v6l4 2"/>
-            </svg>
-          </div>
-          <div><div class="tile-name">Vencidas</div><div class="tile-meta">Tareas vencidas</div></div>
-        </div>
-        <div class="tile-val" style="color:#dc2626">{{ $tareasVencidas }}</div>
-      </div>
-    </div>
-
-  </div>
-
-  {{-- PANEL PRINCIPAL --}}
-  <div class="grid12">
-
-    {{-- Movimientos --}}
-    <div class="span8">
-      <div class="mov-tile">
-        <div class="mov-left">
-          <div class="tile-ico p3" aria-hidden="true">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M8 6h13M8 12h13M8 18h13"/>
-              <path d="M3 6h.01M3 12h.01M3 18h.01"/>
-            </svg>
-          </div>
-          <div><div class="mov-title">Movimientos</div></div>
-        </div>
-
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <div class="mov-total">Total: {{ $totalMovs }}</div>
-          <a class="a-btn" href="{{ route('inventario.movimientos') }}" title="Ver todos los movimientos">
-            <span class="a-ico">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M8 6h13M8 12h13M8 18h13"/>
-                <path d="M3 6h.01M3 12h.01M3 18h.01"/>
-              </svg>
-            </span>
-            Ver todo
-          </a>
-        </div>
-      </div>
-
-      <div class="cardx" style="margin-top:14px;">
-        <div style="font-weight:950;color:#0f172a;">Últimos movimientos</div>
-        <div class="muted" style="margin-top:4px;">Resumen reciente del inventario</div>
-
-        <div class="list">
-          @forelse($ultimosMovs as $m)
-            <div class="item">
-              <div class="row">
-                <div>
-                  <div style="font-weight:950;">
-                    {{ $m->material->descripcion ?? 'Material' }}
-                  </div>
-                  <div class="muted">
-                    {{ ucfirst($m->tipo ?? 'movimiento') }}
-                    @if(!empty($m->fecha))
-                      · {{ \Illuminate\Support\Carbon::parse($m->fecha)->format('d/m/Y') }}
-                    @endif
-                  </div>
-                </div>
-                <div style="text-align:right;">
-                  <div style="font-weight:950;">
-                    {{ number_format((float)($m->cantidad ?? 0), 4) }}
-                  </div>
-                  <div class="muted">
-                    @if(($m->tipo ?? '') === 'traslado')
-                      {{ $m->almacenOrigen->nombre ?? 'Origen' }} → {{ $m->almacenDestino->nombre ?? 'Destino' }}
-                    @else
-                      {{ $m->almacenDestino->nombre ?? $m->almacenOrigen->nombre ?? '—' }}
-                    @endif
-                  </div>
+        @forelse($ultimosMovs as $m)
+          <div class="item">
+            <div class="row">
+              <div>
+                <div class="strong">{{ $m->material->descripcion ?? 'Material' }}</div>
+                <div class="muted">
+                  {{ ucfirst($m->tipo ?? 'Movimiento') }}
+                  @if(!empty($m->fecha))
+                    · {{ \Illuminate\Support\Carbon::parse($m->fecha)->format('d/m/Y') }}
+                  @endif
                 </div>
               </div>
+              <div style="text-align:right">
+                <div class="strong">{{ number_format((float)($m->cantidad ?? 0), 4) }}</div>
+                <div class="muted">{{ $m->almacenDestino->nombre ?? $m->almacenOrigen->nombre ?? '—' }}</div>
+              </div>
             </div>
-          @empty
-            <div class="muted">Aún no hay movimientos registrados.</div>
-          @endforelse
-        </div>
+          </div>
+        @empty
+          <div class="item muted">No hay movimientos registrados.</div>
+        @endforelse
       </div>
     </div>
 
-    {{-- Top materiales --}}
-    <div class="span4">
-      <div class="cardx">
-        <div style="font-weight:950;color:#0f172a;">Top materiales (valor)</div>
-        <div class="muted" style="margin-top:4px;">Stock × costo promedio</div>
+    <div class="s6">
+      <div class="panel">
+        <div class="panel-title">Top materiales por valor</div>
+        <div class="panel-sub">Materiales con mayor impacto económico</div>
 
-        <div class="top-total" title="Valor total del inventario">
-          <div class="label">Total inventario</div>
-          <div class="amount">${{ number_format($valorInventario, 2) }}</div>
-        </div>
-
-        <div class="list">
-          @forelse($topMateriales as $t)
-            <div class="item">
-              <div class="row">
-                <div>
-                  <div style="font-weight:950;">{{ $t->sku }}</div>
-                  <div class="muted">{{ $t->descripcion }}</div>
-                </div>
-                <div style="text-align:right;">
-                  <div style="font-weight:950;">${{ number_format((float)$t->valor, 2) }}</div>
-                  <div class="muted">{{ number_format((float)$t->stock,4) }}</div>
-                </div>
+        @forelse($topMateriales as $t)
+          <div class="item">
+            <div class="row">
+              <div>
+                <div class="strong">{{ $t->codigo ?? 'MAT' }}</div>
+                <div class="muted">{{ $t->descripcion ?? 'Material' }}</div>
+              </div>
+              <div style="text-align:right">
+                <div class="strong">{{ $money($t->valor ?? 0) }}</div>
+                <div class="muted">Stock: {{ number_format((float)($t->stock ?? 0), 4) }}</div>
               </div>
             </div>
-          @empty
-            <div class="muted">Aún no hay existencias valoradas.</div>
-          @endforelse
-        </div>
+          </div>
+        @empty
+          <div class="item muted">No hay existencias valoradas.</div>
+        @endforelse
       </div>
     </div>
 
   </div>
-
-  {{-- PROYECTOS RECIENTES + ALERTAS --}}
-  <div class="grid12">
-
-    <div class="span8">
-      <div class="cardx">
-        <div style="font-weight:950;color:#0f172a;">Proyectos recientes</div>
-        <div class="muted" style="margin-top:4px;">Últimos proyectos de la empresa</div>
-
-        <div class="list">
-          @forelse($proyectosRecientes as $p)
-            @php
-              $estado = (string)($p->estado ?? 'planeado');
-              $porcentaje = (float)($p->porcentaje ?? $p->avance ?? 0);
-
-              $badgeClass = match($estado){
-                'finalizado'   => 'b-green',
-                'en_ejecucion' => 'b-yellow',
-                'pausado'      => 'b-red',
-                'planeado'     => 'b-blue',
-                default        => 'b-slate',
-              };
-            @endphp
-
-            <div class="item">
-              <div class="row" style="align-items:flex-start;">
-                <div style="min-width:0;flex:1;">
-                  <div style="font-weight:950;color:#0f172a;">
-                    {{ $p->nombre ?? 'Proyecto' }}
-                  </div>
-                  <div class="muted">
-                    {{ $p->codigo ?? 'Sin código' }}
-                  </div>
-
-                  <div class="mini-progress">
-                    <span style="width: {{ max(0, min(100, $porcentaje)) }}%"></span>
-                  </div>
-                </div>
-
-                <div style="text-align:right;display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
-                  <span class="badge {{ $badgeClass }}">{{ str_replace('_',' ', ucfirst($estado)) }}</span>
-                  <div style="font-weight:950;color:#0f172a;">{{ number_format($porcentaje, 0) }}%</div>
-                </div>
-              </div>
-            </div>
-          @empty
-            <div class="muted">No hay proyectos registrados todavía.</div>
-          @endforelse
-        </div>
-      </div>
-    </div>
-
-    <div class="span4">
-      <div class="cardx">
-        <div style="font-weight:950;color:#0f172a;">Alertas</div>
-        <div class="muted" style="margin-top:4px;">Estado rápido del sistema</div>
-
-        <div class="list">
-          @if($tareasVencidas > 0)
-            <div class="alert-item alert-red">
-              ⚠️ Tienes {{ $tareasVencidas }} tarea(s) vencida(s).
-            </div>
-          @endif
-
-          @if($tareasPendientes > 10)
-            <div class="alert-item alert-yellow">
-              ⚠️ Hay muchas tareas pendientes: {{ $tareasPendientes }}.
-            </div>
-          @endif
-
-          @if($proyectosActivos > 0)
-            <div class="alert-item alert-green">
-              ✅ Proyectos activos en seguimiento: {{ $proyectosActivos }}.
-            </div>
-          @endif
-
-          @if($tareasVencidas <= 0 && $tareasPendientes <= 10 && $proyectosActivos <= 0)
-            <div class="alert-item alert-green">
-              ✅ Todo bajo control por ahora.
-            </div>
-          @endif
-        </div>
-      </div>
-    </div>
-
-  </div>
-
 </div>
 @endsection

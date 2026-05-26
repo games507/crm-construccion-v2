@@ -52,21 +52,60 @@
     </div>
 
     <div class="flex flex-wrap gap-2">
-      <a href="{{ route('admin.cuentas.exportar') }}"
-         class="inline-flex items-center gap-2 px-4 h-10 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 shadow">
-        Exportar Excel
-      </a>
+ <div class="flex flex-wrap items-center gap-2">
 
-      <a href="{{ route('admin.cuentas.reporte.proveedores') }}"
-         class="inline-flex items-center gap-2 px-4 h-10 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 shadow">
-        Reporte proveedores
-      </a>
+  <a href="{{ route('admin.cuentas.exportar') }}"
+     class="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 h-9 text-sm font-bold text-emerald-700 hover:bg-emerald-100 transition">
 
-      <a href="{{ route('admin.cuentas.flujo') }}"
-         class="inline-flex items-center gap-2 px-4 h-10 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700">
-        Flujo de caja
-      </a>
-    </div>
+    <svg xmlns="http://www.w3.org/2000/svg"
+         class="h-4 w-4"
+         fill="none"
+         viewBox="0 0 24 24"
+         stroke="currentColor"
+         stroke-width="2">
+      <path stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 16V4m0 12-4-4m4 4 4-4M4 20h16" />
+    </svg>
+
+    Excel
+  </a>
+
+  <a href="{{ route('admin.cuentas.reporte.proveedores') }}"
+     class="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 h-9 text-sm font-bold text-indigo-700 hover:bg-indigo-100 transition">
+
+    <svg xmlns="http://www.w3.org/2000/svg"
+         class="h-4 w-4"
+         fill="none"
+         viewBox="0 0 24 24"
+         stroke="currentColor"
+         stroke-width="2">
+      <path stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M9 17v-6m4 6V7m4 10v-3M5 21h14" />
+    </svg>
+
+    Reporte
+  </a>
+
+  <a href="{{ route('admin.cuentas.flujo') }}"
+     class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-3 h-9 text-sm font-bold text-slate-700 hover:bg-slate-200 transition">
+
+    <svg xmlns="http://www.w3.org/2000/svg"
+         class="h-4 w-4"
+         fill="none"
+         viewBox="0 0 24 24"
+         stroke="currentColor"
+         stroke-width="2">
+      <path stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M3 17l6-6 4 4 7-7" />
+    </svg>
+
+    Flujo
+  </a>
+
+</div>
   </div>
 
   @if(session('ok'))
@@ -83,22 +122,51 @@
 
   {{-- ALERTAS --}}
   @if($cantidadVencidas > 0)
-    <div class="rounded-3xl border border-rose-200 bg-rose-50 p-4 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-      <div>
-        <div class="font-black text-rose-800">
-          ⚠️ Tienes {{ $cantidadVencidas }} cuenta{{ $cantidadVencidas > 1 ? 's' : '' }} vencida{{ $cantidadVencidas > 1 ? 's' : '' }}
-        </div>
-        <div class="text-sm text-rose-700 mt-1">
-          Saldo vencido total: <strong>$ {{ number_format($totalVencido, 2, '.', ',') }}</strong>
-        </div>
+
+ 
+<div class="rounded-2xl border border-rose-200 bg-white p-4 shadow-sm">
+
+    <div class="flex items-center justify-between gap-4 flex-wrap">
+
+  <div class="flex items-center gap-3">
+
+    <div class="h-10 w-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M12 9v4m0 4h.01M10.3 4.4 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.4a2 2 0 0 0-3.4 0Z"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </div>
+
+    <div>
+      <div class="text-[11px] uppercase tracking-wide text-rose-600 font-black">
+        
+        Tienes {{ $cantidadVencidas }} cuenta{{ $cantidadVencidas > 1 ? 's' : '' }} vencida{{ $cantidadVencidas > 1 ? 's' : '' }}
       </div>
 
-      <button type="button"
-              @click="vencidas=true"
-              class="inline-flex items-center justify-center h-10 px-4 rounded-xl bg-rose-600 text-white text-sm font-extrabold hover:bg-rose-700 shadow-sm">
-        Ver vencidas
-      </button>
+      <div class="text-sm text-rose-700 mt-1">
+        Saldo vencido total:
+        <strong>$ {{ number_format($totalVencido, 2, '.', ',') }}</strong>
+      </div>
     </div>
+
+  </div>
+
+  <button
+    type="button"
+    @click="vencidas=true"
+    style="background:#e11d48;color:white;"
+    class="px-4 h-10 rounded-2xl text-sm font-extrabold shadow-sm hover:opacity-90 transition"
+  >
+    Ver vencidas
+  </button>
+
+</div>
+</div>
   @endif
 
   @if($cantidadPorVencer > 0)
@@ -112,77 +180,141 @@
     </div>
   @endif
 
-  {{-- DASHBOARD FINANCIERO --}}
-  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+ {{-- DASHBOARD FINANCIERO PRO --}}
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
 
-    <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div class="text-xs uppercase tracking-wide text-slate-500 font-black">Total generado</div>
-      <div class="mt-2 text-2xl font-black text-slate-900">
-        $ {{ number_format($totalGenerado, 2, '.', ',') }}
+  {{-- IZQUIERDA --}}
+  <div class="xl:col-span-3 space-y-4">
+
+    {{-- DASHBOARD FINANCIERO PRO --}}
+    <div class="grid grid-cols-1 gap-4">
+
+
+  <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="text-[11px] uppercase tracking-wide text-slate-500 font-black">
+          Total generado
+        </div>
+        <div class="mt-2 text-xl font-black text-slate-900">
+          $ {{ number_format($totalGenerado, 2, '.', ',') }}
+        </div>
       </div>
-      <div class="mt-3 h-2 rounded-full bg-slate-100 overflow-hidden">
-        <div class="h-2 rounded-full bg-slate-700" style="width:100%"></div>
+
+      <div class="h-10 w-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center">
+        {!! $iconMoney ?? '' !!}
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="2"/>
+          <circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="2"/>
+        </svg>
       </div>
     </div>
-
-    <div class="rounded-3xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
-      <div class="text-xs uppercase tracking-wide text-emerald-700 font-black">Total pagado</div>
-      <div class="mt-2 text-2xl font-black text-emerald-800">
-        $ {{ number_format($totalPagado, 2, '.', ',') }}
-      </div>
-      <div class="mt-3 h-2 rounded-full bg-emerald-100 overflow-hidden">
-        <div class="h-2 rounded-full bg-emerald-600" style="width: {{ min($porcentajePagado, 100) }}%"></div>
-      </div>
-      <div class="mt-2 text-xs font-bold text-emerald-700">{{ $porcentajePagado }}% pagado</div>
-    </div>
-
-    <div class="rounded-3xl border border-rose-200 bg-rose-50 p-5 shadow-sm">
-      <div class="text-xs uppercase tracking-wide text-rose-700 font-black">Saldo pendiente</div>
-      <div class="mt-2 text-2xl font-black text-rose-800">
-        $ {{ number_format($saldoPendiente, 2, '.', ',') }}
-      </div>
-      <div class="mt-2 text-xs font-bold text-rose-700">Por pagar</div>
-    </div>
-
-    <div class="rounded-3xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
-      <div class="text-xs uppercase tracking-wide text-amber-700 font-black">Saldo vencido</div>
-      <div class="mt-2 text-2xl font-black text-amber-800">
-        $ {{ number_format($totalVencido, 2, '.', ',') }}
-      </div>
-      <div class="mt-2 text-xs font-bold text-amber-700">
-        {{ $cantidadVencidas }} cuenta{{ $cantidadVencidas !== 1 ? 's' : '' }} vencida{{ $cantidadVencidas !== 1 ? 's' : '' }}
-      </div>
-    </div>
-
   </div>
 
-  {{-- FILTROS --}}
+  <div class="rounded-2xl border border-emerald-200 bg-white p-4 shadow-sm">
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="text-[11px] uppercase tracking-wide text-emerald-600 font-black">
+          Total pagado
+        </div>
+        <div class="mt-2 text-xl font-black text-emerald-700">
+          $ {{ number_format($totalPagado, 2, '.', ',') }}
+        </div>
+        <div class="mt-1 text-xs font-bold text-emerald-600">
+          {{ $porcentajePagado }}% pagado
+        </div>
+      </div>
+
+      <div class="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="rounded-2xl border border-rose-200 bg-white p-4 shadow-sm">
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="text-[11px] uppercase tracking-wide text-rose-600 font-black">
+          Saldo pendiente
+        </div>
+        <div class="mt-2 text-xl font-black text-rose-700">
+          $ {{ number_format($saldoPendiente, 2, '.', ',') }}
+        </div>
+      </div>
+
+      <div class="h-10 w-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M12 9v4m0 4h.01M10.3 4.4 2.6 18a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 4.4a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="rounded-2xl border border-amber-200 bg-white p-4 shadow-sm">
+    <div class="flex items-center justify-between gap-3">
+      <div>
+        <div class="text-[11px] uppercase tracking-wide text-amber-600 font-black">
+          Vencidas
+        </div>
+
+        <div class="mt-2 text-xl font-black text-amber-700">
+          {{ $cantidadVencidas }}
+        </div>
+
+        <div class="mt-1 text-xs font-bold text-amber-600">
+          $ {{ number_format($totalVencido, 2, '.', ',') }}
+        </div>
+      </div>
+
+      <button type="button"
+              @click="vencidas=true"
+              class="shrink-0 inline-flex items-center justify-center h-9 px-3 rounded-xl bg-rose-600 text-white text-xs font-black shadow-sm hover:bg-rose-700">
+        Ver
+      </button>
+    </div>
+
+ <button type="button"
+        @click="vencidas=true"
+        class="mt-3 w-full h-9 rounded-2xl bg-rose-100 text-rose-700 border border-rose-200 text-xs font-extrabold hover:bg-rose-200 transition">
+  Ver vencidas
+</button>
+  </div>
+
+    </div>
+  </div>
+
+  {{-- DERECHA --}}
+  <div class="xl:col-span-9 space-y-4">
+
+ {{-- FILTROS --}}
   <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-    <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+    <div class="flex flex-wrap items-center gap-2">
 
       <input
         x-model="buscar"
         type="text"
-        placeholder="Buscar proveedor o descripción"
-        class="h-11 rounded-xl border border-slate-300 px-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
+        placeholder="Buscar"
+        class="h-10 w-52 rounded-2xl border border-slate-300 px-3 text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
       >
 
-      <select x-model="proveedor" class="h-11 rounded-xl border border-slate-300 px-3 text-sm bg-white">
-        <option value="">Todos los proveedores</option>
+      <select x-model="proveedor" class="h-10 rounded-2xl border border-slate-300 px-3 text-sm bg-white min-w-[180px]">
+        <option value="">Proveedor</option>
         @foreach($proveedores as $p)
           <option value="{{ $p }}">{{ $p }}</option>
         @endforeach
       </select>
 
-      <select x-model="proyecto" class="h-11 rounded-xl border border-slate-300 px-3 text-sm bg-white">
-        <option value="">Todos los proyectos</option>
+      <select x-model="proyecto" class="h-10 rounded-2xl border border-slate-300 px-3 text-sm bg-white min-w-[180px]">
+        <option value="">Proyecto</option>
         @foreach($proyectos as $p)
           <option value="{{ $p }}">{{ $p }}</option>
         @endforeach
       </select>
 
-      <select x-model="estado" class="h-11 rounded-xl border border-slate-300 px-3 text-sm bg-white">
-        <option value="">Todos los estados</option>
+      <select x-model="estado" class="h-10 rounded-2xl border border-slate-300 px-3 text-sm bg-white min-w-[150px]">
+        <option value="">Estado</option>
         <option value="pendiente">Pendiente</option>
         <option value="parcial">Parcial</option>
         <option value="pagado">Pagado</option>
@@ -191,25 +323,22 @@
       <button
         type="button"
         @click="vencidas = !vencidas"
-        :class="vencidas ? 'bg-rose-600 text-white' : 'bg-white text-slate-700 border border-slate-300'"
-        class="h-11 rounded-xl px-3 text-sm font-bold shadow-sm"
+        :class="vencidas ? 'bg-rose-600 text-white border-rose-600' : 'bg-white text-slate-700 border-slate-300'"
+        class="h-10 px-4 rounded-2xl border text-sm font-black shadow-sm transition"
       >
-        Solo vencidas
+        Vencidas
       </button>
 
-    </div>
-
-    <div class="mt-3 flex justify-end">
       <button
         type="button"
         @click="buscar=''; estado=''; proveedor=''; proyecto=''; vencidas=false"
-        class="h-9 px-3 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200"
+        class="h-10 px-4 rounded-2xl bg-slate-100 text-slate-700 text-sm font-black hover:bg-slate-200 transition"
       >
-        Limpiar filtros
+        Limpiar
       </button>
+
     </div>
   </div>
-
   {{-- TABLA --}}
   <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
     <div class="overflow-x-auto">
@@ -354,8 +483,11 @@
           @endforelse
         </tbody>
       </table>
-    </div>
+</div>
   </div>
+
+  </div>
+</div>
 
   {{-- MODAL PAGAR --}}
   <div x-show="openModal === 'pagar'"
