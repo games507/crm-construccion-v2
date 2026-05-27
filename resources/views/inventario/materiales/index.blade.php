@@ -2,171 +2,561 @@
 @section('title','Materiales')
 
 @section('content')
+
 @php
-  $icon = function($name){
-    if($name==='plus') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-    if($name==='search') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/></svg>';
-    if($name==='edit') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 20h9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    if($name==='box') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" stroke="currentColor" stroke-width="2"/><path d="M3.3 7L12 12l8.7-5" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 22V12" stroke="currentColor" stroke-width="2"/></svg>';
-    if($name==='alert') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="2"/><path d="M12 9v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12 17h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
-    return '';
-  };
+
+$icon = function($name){
+
+  if($name==='plus'){
+    return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path d="M12 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>';
+  }
+
+  if($name==='search'){
+    return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+    </svg>';
+  }
+
+  if($name==='edit'){
+    return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path d="M12 20h9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"/>
+    </svg>';
+  }
+
+  if($name==='pdf'){
+    return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path d="M12 17V3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <path d="m6 11 6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <path d="M19 21H5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>';
+  }
+
+  if($name==='box'){
+    return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+            stroke="currentColor"
+            stroke-width="2"/>
+      <path d="M3.3 7L12 12l8.7-5"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linejoin="round"/>
+      <path d="M12 22V12"
+            stroke="currentColor"
+            stroke-width="2"/>
+    </svg>';
+  }
+
+  if($name==='money'){
+    return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="6" width="18" height="12" rx="2"
+            stroke="currentColor"
+            stroke-width="2"/>
+      <circle cx="12" cy="12" r="2.5"
+              stroke="currentColor"
+              stroke-width="2"/>
+    </svg>';
+  }
+
+  return '';
+};
+
+$qVal = trim((string)($q ?? ''));
+
+$total = $items->total();
+$activos = $items->where('activo',1)->count();
+$valor = $items->sum('costo_estandar');
+
 @endphp
 
-<div class="max-w-6xl mx-auto">
+<style>
 
-  {{-- Header --}}
-  <div class="flex flex-wrap items-start justify-between gap-3">
+.vs-wrap{
+  max-width:1450px;
+  margin:0 auto;
+  padding:18px;
+}
+
+.vs-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:16px;
+  flex-wrap:wrap;
+  margin-bottom:18px;
+}
+
+.vs-title{
+  font-size:30px;
+  font-weight:950;
+  color:#0f172a;
+}
+
+.vs-sub{
+  margin-top:6px;
+  font-size:13px;
+  color:#64748b;
+  font-weight:700;
+}
+
+.btn{
+  height:44px;
+  border:none;
+  border-radius:16px;
+  padding:0 18px;
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  font-weight:900;
+  text-decoration:none;
+  transition:.2s ease;
+}
+
+.btn:hover{
+  transform:translateY(-2px);
+}
+
+.btn-primary{
+  background:linear-gradient(135deg,#0f172a,#0b4f7d);
+  color:white;
+  box-shadow:0 12px 30px rgba(15,23,42,.15);
+}
+
+.btn-light{
+  background:#f1f5f9;
+  color:#334155;
+  border:1px solid #e2e8f0;
+}
+
+.panel{
+  background:white;
+  border-radius:28px;
+  border:1px solid #e2e8f0;
+  box-shadow:0 18px 50px rgba(15,23,42,.07);
+  overflow:hidden;
+}
+
+.panel-head{
+  padding:18px;
+  border-bottom:1px solid #e2e8f0;
+}
+
+.panel-title{
+  font-size:16px;
+  font-weight:950;
+  color:#0f172a;
+}
+
+.panel-sub{
+  margin-top:4px;
+  font-size:12px;
+  color:#64748b;
+  font-weight:700;
+}
+
+.kpi-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:14px;
+  margin-bottom:18px;
+}
+
+@media(max-width:900px){
+  .kpi-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+.kpi{
+  background:white;
+  border-radius:24px;
+  border:1px solid #e2e8f0;
+  padding:18px;
+  box-shadow:0 14px 40px rgba(15,23,42,.06);
+}
+
+.kpi-label{
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:#64748b;
+  font-weight:950;
+}
+
+.kpi-value{
+  margin-top:10px;
+  font-size:28px;
+  font-weight:950;
+}
+
+.green{color:#047857}
+.indigo{color:#4338ca}
+
+.search-wrap{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+
+.search-box{
+  position:relative;
+}
+
+.search-box span{
+  position:absolute;
+  left:12px;
+  top:50%;
+  transform:translateY(-50%);
+  color:#94a3b8;
+}
+
+.search-input{
+  height:44px;
+  width:340px;
+  max-width:80vw;
+  border-radius:16px;
+  border:1px solid #dbe2ea;
+  padding-left:42px;
+  padding-right:14px;
+  font-weight:700;
+}
+
+.search-input:focus{
+  outline:none;
+  border-color:#38bdf8;
+  box-shadow:0 0 0 4px rgba(14,165,233,.12);
+}
+
+.table-wrap{
+  overflow:auto;
+  max-height:650px;
+}
+
+.table-wrap::-webkit-scrollbar{
+  width:8px;
+  height:8px;
+}
+
+.table-wrap::-webkit-scrollbar-thumb{
+  background:#cbd5e1;
+  border-radius:999px;
+}
+
+table{
+  width:100%;
+  min-width:1200px;
+  border-collapse:collapse;
+}
+
+thead{
+  position:sticky;
+  top:0;
+  z-index:10;
+  background:#f8fafc;
+}
+
+th{
+  padding:14px;
+  text-align:left;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:#64748b;
+  font-weight:950;
+}
+
+td{
+  padding:14px;
+  border-top:1px solid #edf2f7;
+  vertical-align:middle;
+}
+
+tr:hover{
+  background:#fafcff;
+}
+
+.badge{
+  display:inline-flex;
+  align-items:center;
+  padding:7px 12px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:950;
+}
+
+.badge-ok{
+  background:#dcfce7;
+  color:#166534;
+}
+
+.badge-off{
+  background:#fee2e2;
+  color:#991b1b;
+}
+
+.pagination-wrap{
+  padding:18px;
+  border-top:1px solid #e2e8f0;
+  background:#fff;
+}
+
+</style>
+
+<div class="vs-wrap">
+
+  <div class="vs-head">
+
     <div>
-      <h1 class="text-xl font-extrabold tracking-tight flex items-center gap-2">
-        <span class="text-slate-700">{!! $icon('box') !!}</span>
+      <div class="vs-title">
         Materiales
-      </h1>
-      <p class="text-sm text-slate-500 mt-1">Catálogo de materiales de tu empresa.</p>
+      </div>
+
+      <div class="vs-sub">
+        Catálogo general de materiales y costos.
+      </div>
     </div>
 
     <div class="flex gap-2 flex-wrap">
+
+      <a href="{{ route('inventario.materiales.pdf', ['q'=>$qVal]) }}"
+         target="_blank"
+         class="btn btn-light">
+
+        {!! $icon('pdf') !!}
+
+        PDF
+      </a>
+
       @can('materiales.crear')
+
         <a href="{{ route('inventario.materiales.create') }}"
-           class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold
-                  bg-blue-600 text-white hover:bg-blue-700 shadow-sm">
-          {!! $icon('plus') !!} Nuevo material
+           class="btn btn-primary">
+
+          {!! $icon('plus') !!}
+
+          Nuevo material
         </a>
+
       @endcan
+
     </div>
+
   </div>
 
-  {{-- Alerts --}}
-  @if (session('ok'))
-    <div class="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800">
-      ✅ {{ session('ok') }}
-    </div>
-  @endif
+  <div class="kpi-grid">
 
-  @if (session('err'))
-    <div class="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-800 flex items-center gap-2">
-      <span>{!! $icon('alert') !!}</span>
-      <span>{{ session('err') }}</span>
-    </div>
-  @endif
-
-  @if ($errors->any())
-    <div class="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-800">
-      <div class="flex items-center gap-2 font-semibold">
-        <span>{!! $icon('alert') !!}</span>
-        <span>Hay errores</span>
-      </div>
-      <ul class="list-disc ml-6 mt-2 text-sm">
-        @foreach($errors->all() as $e)
-          <li>{{ $e }}</li>
-        @endforeach
-      </ul>
-    </div>
-  @endif
-
-  {{-- Search --}}
-  <div class="mt-5 rounded-2xl border border-slate-900/10 bg-white shadow-sm">
-    <form class="p-4 flex flex-col md:flex-row gap-3 md:items-center" method="GET" action="{{ route('inventario.materiales') }}">
-      <div class="flex-1 relative">
-        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{!! $icon('search') !!}</span>
-        <input
-          class="w-full h-11 pl-11 pr-3 rounded-xl border border-slate-900/10 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none"
-          name="q"
-          value="{{ $q ?? '' }}"
-          placeholder="Buscar por descripción, código, sku o unidad…"
-        >
+    <div class="kpi">
+      <div class="kpi-label">
+        Total materiales
       </div>
 
-      <div class="flex gap-2">
-        <button class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold
-                       bg-slate-900 text-white hover:bg-slate-800 shadow-sm" type="submit">
-          {!! $icon('search') !!} Buscar
-        </button>
-
-        @if(!empty($q))
-          <a class="inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold
-                    bg-white border border-slate-900/10 hover:border-slate-900/20 shadow-sm"
-             href="{{ route('inventario.materiales') }}">
-            Limpiar
-          </a>
-        @endif
+      <div class="kpi-value">
+        {{ number_format($total) }}
       </div>
-    </form>
+    </div>
+
+    <div class="kpi">
+      <div class="kpi-label">
+        Materiales activos
+      </div>
+
+      <div class="kpi-value green">
+        {{ number_format($activos) }}
+      </div>
+    </div>
+
+    <div class="kpi">
+      <div class="kpi-label">
+        Costo visible
+      </div>
+
+      <div class="kpi-value indigo">
+        ${{ number_format($valor,2) }}
+      </div>
+    </div>
+
   </div>
 
-  {{-- Table --}}
-  <div class="mt-4 rounded-2xl border border-slate-900/10 bg-white shadow-sm overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="min-w-full text-sm">
-        <thead class="bg-slate-50 text-slate-600">
-          <tr class="text-left">
-            <th class="px-4 py-3 font-semibold">Código / SKU</th>
-            <th class="px-4 py-3 font-semibold">Descripción</th>
-            <th class="px-4 py-3 font-semibold">Unidad</th>
-            <th class="px-4 py-3 font-semibold text-center">Activo</th>
-            <th class="px-4 py-3 font-semibold text-right">Acciones</th>
+  <div class="panel">
+
+    <div class="panel-head">
+
+      <div class="flex items-center justify-between gap-4 flex-wrap">
+
+        <div>
+
+          <div class="panel-title">
+            Listado de materiales
+          </div>
+
+          <div class="panel-sub">
+            Busca por código, SKU o descripción.
+          </div>
+
+        </div>
+
+        <form method="GET"
+              action="{{ route('inventario.materiales') }}"
+              class="search-wrap">
+
+          <div class="search-box">
+
+            <span>
+              {!! $icon('search') !!}
+            </span>
+
+            <input
+              type="text"
+              name="q"
+              value="{{ $qVal }}"
+              placeholder="Buscar material..."
+              class="search-input"
+            >
+
+          </div>
+
+          <button type="submit"
+                  class="btn btn-primary">
+            Buscar
+          </button>
+
+          @if($qVal !== '')
+
+            <a href="{{ route('inventario.materiales') }}"
+               class="btn btn-light">
+
+              Limpiar
+
+            </a>
+
+          @endif
+
+        </form>
+
+      </div>
+
+    </div>
+
+    <div class="table-wrap">
+
+      <table>
+
+        <thead>
+
+          <tr>
+            <th>Código</th>
+            <th>SKU</th>
+            <th>Descripción</th>
+            <th>Unidad</th>
+            <th class="text-right">Costo estándar</th>
+            <th>Estado</th>
+            <th>Acciones</th>
           </tr>
+
         </thead>
-        <tbody class="divide-y divide-slate-100">
-          @forelse($materiales as $m)
-            <tr class="hover:bg-slate-50/60">
-              <td class="px-4 py-3">
-                <div class="font-semibold text-slate-900">
-                  {{ $m->codigo ?? '—' }}
-                </div>
-                <div class="text-xs text-slate-500">
-                  SKU: {{ $m->sku ?? '—' }}
-                </div>
-              </td>
 
-              <td class="px-4 py-3">
-                <div class="font-semibold">{{ $m->descripcion }}</div>
-              </td>
+        <tbody>
 
-              <td class="px-4 py-3">
-                <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                  {{ $m->unidad ?? '—' }}
-                </span>
-              </td>
+          @forelse($items as $m)
 
-              <td class="px-4 py-3 text-center">
-                @if((int)($m->activo ?? 1) === 1)
-                  <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                    Sí
-                  </span>
-                @else
-                  <span class="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
-                    No
-                  </span>
-                @endif
-              </td>
-<!-- boton de eliminar y editar -->
-             <td class="px-4 py-3 text-right whitespace-nowrap">
-  <x-action-icons
-    :edit-url="route('inventario.materiales.edit', $m->id)"
-    :delete-url="route('inventario.materiales.destroy', $m->id)"
-    :can-edit="auth()->user()->can('materiales.editar')"
-    :can-delete="auth()->user()->can('materiales.eliminar')"
-    confirm="¿Eliminar este material?"
-  />
-</td>
-
-            </tr>
-          @empty
             <tr>
-              <td class="px-4 py-8 text-center text-slate-500" colspan="5">
-                No hay materiales registrados.
+
+              <td class="font-black text-slate-900">
+                {{ $m->codigo ?: '—' }}
               </td>
+
+              <td class="font-semibold text-slate-600">
+                {{ $m->sku ?: '—' }}
+              </td>
+
+              <td>
+
+                <div class="font-black text-slate-900">
+                  {{ $m->descripcion ?: '—' }}
+                </div>
+
+              </td>
+
+              <td class="font-semibold text-slate-600">
+                {{ $m->unidad ?: '—' }}
+              </td>
+
+              <td class="text-right font-black text-indigo-700">
+                ${{ number_format((float)($m->costo_estandar ?? 0),2) }}
+              </td>
+
+              <td>
+
+                @if($m->activo)
+
+                  <span class="badge badge-ok">
+                    ACTIVO
+                  </span>
+
+                @else
+
+                  <span class="badge badge-off">
+                    INACTIVO
+                  </span>
+
+                @endif
+
+              </td>
+
+              <td>
+
+                @can('materiales.editar')
+
+                  <a href="{{ route('inventario.materiales.edit', $m) }}"
+                     class="btn btn-light"
+                     style="height:38px;padding:0 12px">
+
+                    {!! $icon('edit') !!}
+
+                  </a>
+
+                @endcan
+
+              </td>
+
             </tr>
+
+          @empty
+
+            <tr>
+
+              <td colspan="7"
+                  class="text-center py-14 text-slate-500 font-bold">
+
+                No hay materiales registrados.
+
+              </td>
+
+            </tr>
+
           @endforelse
+
         </tbody>
+
       </table>
+
     </div>
 
-    <div class="px-4 py-3 border-t border-slate-900/10">
-      {{ $materiales->links() }}
+    <div class="pagination-wrap">
+      {{ $items->links() }}
     </div>
+
   </div>
 
 </div>
+
 @endsection

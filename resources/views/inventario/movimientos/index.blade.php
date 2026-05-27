@@ -4,190 +4,531 @@
 @section('content')
 @php
   $icon = function($name){
-    if($name==='plus') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-    if($name==='search') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/></svg>';
-    if($name==='swap') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M16 3l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 7H10a4 4 0 0 0-4 4v0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M8 21l-4-4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17h10a4 4 0 0 0 4-4v0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-    if($name==='alert') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="2"/><path d="M12 9v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12 17h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
+
+    if($name==='plus'){
+      return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M12 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>';
+    }
+
+    if($name==='search'){
+      return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+      </svg>';
+    }
+
+    if($name==='swap'){
+      return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M16 3l4 4-4 4" stroke="currentColor" stroke-width="2"/>
+        <path d="M20 7H10a4 4 0 0 0-4 4" stroke="currentColor" stroke-width="2"/>
+        <path d="M8 21l-4-4 4-4" stroke="currentColor" stroke-width="2"/>
+        <path d="M4 17h10a4 4 0 0 0 4-4" stroke="currentColor" stroke-width="2"/>
+      </svg>';
+    }
+
     return '';
   };
 
   $tipoBadge = function($tipo){
-    $tipo = (string)$tipo;
-    if($tipo==='entrada')  return 'bg-emerald-100 text-emerald-800';
-    if($tipo==='salida')   return 'bg-rose-100 text-rose-800';
-    if($tipo==='traslado') return 'bg-sky-100 text-sky-800';
-    if($tipo==='ajuste')   return 'bg-amber-100 text-amber-800';
-    return 'bg-slate-100 text-slate-800';
+    return match($tipo){
+      'entrada' => 'badge-green',
+      'salida' => 'badge-red',
+      'traslado' => 'badge-blue',
+      'ajuste' => 'badge-yellow',
+      default => 'badge-slate',
+    };
   };
 
   $q = (string) request('q', '');
+
+  $totalMovs = $movs->total();
+  $entradas = $movs->where('tipo','entrada')->count();
+  $salidas = $movs->where('tipo','salida')->count();
 @endphp
 
-<div class="max-w-7xl mx-auto">
+<style>
 
-  {{-- Header --}}
-  <div class="flex flex-wrap items-start justify-between gap-3">
+.vs-wrap{
+  max-width:1450px;
+  margin:0 auto;
+  padding:18px;
+}
+
+.vs-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:16px;
+  flex-wrap:wrap;
+  margin-bottom:18px;
+}
+
+.vs-title{
+  font-size:30px;
+  font-weight:950;
+  color:#0f172a;
+}
+
+.vs-sub{
+  margin-top:6px;
+  font-size:13px;
+  color:#64748b;
+  font-weight:700;
+}
+
+.btn{
+  height:44px;
+  border:none;
+  border-radius:16px;
+  padding:0 18px;
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  font-weight:900;
+  text-decoration:none;
+  transition:.2s ease;
+}
+
+.btn:hover{
+  transform:translateY(-2px);
+}
+
+.btn-primary{
+  background:linear-gradient(135deg,#0f172a,#0b4f7d);
+  color:white;
+  box-shadow:0 12px 30px rgba(15,23,42,.15);
+}
+
+.btn-light{
+  background:#f1f5f9;
+  color:#334155;
+  border:1px solid #e2e8f0;
+}
+
+.panel{
+  background:white;
+  border-radius:28px;
+  border:1px solid #e2e8f0;
+  box-shadow:0 18px 50px rgba(15,23,42,.07);
+  overflow:hidden;
+}
+
+.panel-head{
+  padding:18px;
+  border-bottom:1px solid #e2e8f0;
+}
+
+.panel-title{
+  font-size:16px;
+  font-weight:950;
+  color:#0f172a;
+}
+
+.panel-sub{
+  margin-top:4px;
+  font-size:12px;
+  color:#64748b;
+  font-weight:700;
+}
+
+.panel-body{
+  padding:18px;
+}
+
+.kpi-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:14px;
+  margin-bottom:18px;
+}
+
+@media(max-width:900px){
+  .kpi-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+.kpi{
+  background:white;
+  border-radius:24px;
+  border:1px solid #e2e8f0;
+  padding:18px;
+  box-shadow:0 14px 40px rgba(15,23,42,.06);
+}
+
+.kpi-label{
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:#64748b;
+  font-weight:950;
+}
+
+.kpi-value{
+  margin-top:10px;
+  font-size:28px;
+  font-weight:950;
+}
+
+.green{color:#047857}
+.red{color:#b91c1c}
+.blue{color:#1d4ed8}
+
+.search-wrap{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+
+.search-box{
+  position:relative;
+}
+
+.search-box span{
+  position:absolute;
+  left:12px;
+  top:50%;
+  transform:translateY(-50%);
+  color:#94a3b8;
+}
+
+.search-input{
+  height:44px;
+  width:340px;
+  max-width:80vw;
+  border-radius:16px;
+  border:1px solid #dbe2ea;
+  padding-left:42px;
+  padding-right:14px;
+  font-weight:700;
+}
+
+.search-input:focus{
+  outline:none;
+  border-color:#38bdf8;
+  box-shadow:0 0 0 4px rgba(14,165,233,.12);
+}
+
+.table-wrap{
+  overflow:auto;
+  max-height:650px;
+}
+
+.table-wrap::-webkit-scrollbar{
+  width:8px;
+  height:8px;
+}
+
+.table-wrap::-webkit-scrollbar-thumb{
+  background:#cbd5e1;
+  border-radius:999px;
+}
+
+table{
+  width:100%;
+  min-width:1400px;
+  border-collapse:collapse;
+}
+
+thead{
+  position:sticky;
+  top:0;
+  z-index:10;
+  background:#f8fafc;
+}
+
+th{
+  padding:14px;
+  text-align:left;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:#64748b;
+  font-weight:950;
+  white-space:nowrap;
+}
+
+td{
+  padding:14px;
+  border-top:1px solid #edf2f7;
+  vertical-align:middle;
+}
+
+tr:hover{
+  background:#fafcff;
+}
+
+.badge{
+  display:inline-flex;
+  align-items:center;
+  padding:7px 12px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:950;
+  border:1px solid transparent;
+}
+
+.badge-green{
+  background:#dcfce7;
+  color:#166534;
+  border-color:#bbf7d0;
+}
+
+.badge-red{
+  background:#fee2e2;
+  color:#991b1b;
+  border-color:#fecaca;
+}
+
+.badge-blue{
+  background:#dbeafe;
+  color:#1d4ed8;
+  border-color:#bfdbfe;
+}
+
+.badge-yellow{
+  background:#fef3c7;
+  color:#92400e;
+  border-color:#fde68a;
+}
+
+.badge-slate{
+  background:#e2e8f0;
+  color:#334155;
+  border-color:#cbd5e1;
+}
+
+.pagination-wrap{
+  padding:18px;
+  border-top:1px solid #e2e8f0;
+  background:#fff;
+}
+
+</style>
+
+<div class="vs-wrap">
+
+  <div class="vs-head">
+
     <div>
-      <h1 class="text-xl font-extrabold tracking-tight flex items-center gap-2">
-        <span class="text-slate-700">{!! $icon('swap') !!}</span>
-        Movimientos
-      </h1>
-      <p class="text-sm text-slate-500 mt-1">Entradas, salidas, traslados y ajustes de inventario.</p>
+      <div class="vs-title">
+        Movimientos de Inventario
+      </div>
+
+      <div class="vs-sub">
+        Entradas, salidas, traslados y ajustes del inventario.
+      </div>
     </div>
 
-    <div class="flex items-center gap-2 flex-wrap">
+    @can('inventario.crear')
+      <a href="{{ route('inventario.movimientos.create') }}"
+         class="btn btn-primary">
+        {!! $icon('plus') !!}
+        Nuevo movimiento
+      </a>
+    @endcan
 
-      {{-- ✅ Buscador + Botón Buscar (elegante) --}}
-      <form method="GET" action="{{ route('inventario.movimientos') }}" class="flex items-center gap-2">
-        <div class="relative">
-          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-            {!! $icon('search') !!}
-          </span>
-
-          <input
-            type="text"
-            name="q"
-            value="{{ $q }}"
-            placeholder="Buscar por material, referencia o tipo..."
-            class="h-10 w-72 max-w-[75vw] rounded-xl border border-slate-300 bg-white pl-10 pr-3 text-sm
-                   focus:border-blue-500 focus:ring-blue-500"
-          >
-        </div>
-
-        <button type="submit"
-          class="inline-flex items-center gap-2 h-10 rounded-xl px-4 text-sm font-semibold
-                 bg-slate-900 text-white hover:bg-slate-950 shadow-sm">
-          {!! $icon('search') !!}
-          Buscar
-        </button>
-
-        @if($q !== '')
-          <a href="{{ route('inventario.movimientos') }}"
-             class="inline-flex items-center h-10 rounded-xl px-3 text-sm font-semibold
-                    border border-slate-900/10 bg-white text-slate-700 hover:bg-slate-50">
-            Limpiar
-          </a>
-        @endif
-      </form>
-
-      @can('inventario.crear')
-        <a href="{{ route('inventario.movimientos.create') }}"
-           class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold
-                  bg-blue-600 text-white hover:bg-blue-700 shadow-sm">
-          {!! $icon('plus') !!} Nuevo movimiento
-        </a>
-      @endcan
-    </div>
   </div>
 
-  {{-- Alerts --}}
-  @if (session('ok'))
-    <div class="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800">
-      ✅ {{ session('ok') }}
-    </div>
-  @endif
+  <div class="kpi-grid">
 
-  @if ($errors->any())
-    <div class="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-800">
-      <div class="flex items-center gap-2 font-semibold">
-        <span>{!! $icon('alert') !!}</span>
-        <span>Hay errores</span>
+    <div class="kpi">
+      <div class="kpi-label">Total movimientos</div>
+      <div class="kpi-value blue">
+        {{ number_format($totalMovs) }}
       </div>
-      <ul class="list-disc ml-6 mt-2 text-sm">
-        @foreach($errors->all() as $e)
-          <li>{{ $e }}</li>
-        @endforeach
-      </ul>
     </div>
-  @endif
 
-  {{-- Tabla --}}
-  <div class="mt-5 rounded-2xl border border-slate-900/10 bg-white shadow-sm overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="min-w-full text-sm">
-        <thead class="bg-slate-50 text-slate-600">
-          <tr class="text-left">
-            <th class="px-4 py-3 font-semibold">Fecha</th>
-            <th class="px-4 py-3 font-semibold">Tipo</th>
-            <th class="px-4 py-3 font-semibold">Material</th>
-            <th class="px-4 py-3 font-semibold">Origen</th>
-            <th class="px-4 py-3 font-semibold">Destino</th>
-            <th class="px-4 py-3 font-semibold text-right">Cantidad</th>
-            <th class="px-4 py-3 font-semibold text-right">Costo</th>
-            <th class="px-4 py-3 font-semibold">Referencia</th>
+    <div class="kpi">
+      <div class="kpi-label">Entradas</div>
+      <div class="kpi-value green">
+        {{ number_format($entradas) }}
+      </div>
+    </div>
+
+    <div class="kpi">
+      <div class="kpi-label">Salidas</div>
+      <div class="kpi-value red">
+        {{ number_format($salidas) }}
+      </div>
+    </div>
+
+  </div>
+
+  <div class="panel">
+
+    <div class="panel-head">
+
+      <div class="flex items-center justify-between gap-4 flex-wrap">
+
+        <div>
+          <div class="panel-title">
+            Historial de movimientos
+          </div>
+
+          <div class="panel-sub">
+            Registro completo del inventario.
+          </div>
+        </div>
+
+        <form method="GET"
+              action="{{ route('inventario.movimientos') }}"
+              class="search-wrap">
+
+          <div class="search-box">
+
+            <span>
+              {!! $icon('search') !!}
+            </span>
+
+            <input
+              type="text"
+              name="q"
+              value="{{ $q }}"
+              placeholder="Buscar material, referencia o tipo..."
+              class="search-input"
+            >
+
+          </div>
+
+          <button type="submit"
+                  class="btn btn-light">
+            Buscar
+          </button>
+
+          @if($q !== '')
+            <a href="{{ route('inventario.movimientos') }}"
+               class="btn btn-light">
+              Limpiar
+            </a>
+          @endif
+
+        </form>
+
+      </div>
+
+    </div>
+
+    <div class="table-wrap">
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>Material</th>
+            <th>Origen</th>
+            <th>Destino</th>
+            <th class="text-right">Cantidad</th>
+            <th class="text-right">Costo U.</th>
+            <th>Referencia</th>
           </tr>
         </thead>
 
-        <tbody class="divide-y divide-slate-100">
+        <tbody>
+
           @forelse($movs as $m)
+
             @php
               $mat = $m->material;
-              $codigoMat = $mat->codigo ?? $mat->sku ?? '—';
-              $descMat = $mat->descripcion ?? '—';
               $origen = $m->almacenOrigen;
               $destino = $m->almacenDestino;
             @endphp
 
-            <tr class="hover:bg-slate-50/60">
-              <td class="px-4 py-3 whitespace-nowrap">
+            <tr>
+
+              <td class="font-bold whitespace-nowrap">
                 {{ \Carbon\Carbon::parse($m->fecha)->format('Y-m-d') }}
               </td>
 
-              <td class="px-4 py-3">
-                <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $tipoBadge($m->tipo) }}">
-                  {{ ucfirst($m->tipo) }}
+              <td>
+                <span class="badge {{ $tipoBadge($m->tipo) }}">
+                  {{ strtoupper($m->tipo) }}
                 </span>
               </td>
 
-              <td class="px-4 py-3">
-                <div class="font-semibold text-slate-900">{{ $codigoMat }}</div>
-                <div class="text-slate-500 text-xs">{{ $descMat }}</div>
+              <td>
+
+                <div class="font-black text-slate-900">
+                  {{ $mat->codigo ?? $mat->sku ?? '—' }}
+                </div>
+
+                <div class="text-xs text-slate-500 font-semibold mt-1">
+                  {{ $mat->descripcion ?? '—' }}
+                </div>
+
               </td>
 
-              <td class="px-4 py-3 text-slate-700">
+              <td>
+
                 @if($origen)
-                  <div class="font-semibold">{{ $origen->codigo }}</div>
-                  <div class="text-xs text-slate-500">{{ $origen->nombre }}</div>
+                  <div class="font-black text-slate-900">
+                    {{ $origen->codigo }}
+                  </div>
+
+                  <div class="text-xs text-slate-500 font-semibold mt-1">
+                    {{ $origen->nombre }}
+                  </div>
                 @else
                   —
                 @endif
+
               </td>
 
-              <td class="px-4 py-3 text-slate-700">
+              <td>
+
                 @if($destino)
-                  <div class="font-semibold">{{ $destino->codigo }}</div>
-                  <div class="text-xs text-slate-500">{{ $destino->nombre }}</div>
+                  <div class="font-black text-slate-900">
+                    {{ $destino->codigo }}
+                  </div>
+
+                  <div class="text-xs text-slate-500 font-semibold mt-1">
+                    {{ $destino->nombre }}
+                  </div>
                 @else
                   —
                 @endif
+
               </td>
 
-              <td class="px-4 py-3 text-right font-extrabold">
-                {{ number_format((float)$m->cantidad, 0) }}
+              <td class="text-right font-black">
+                {{ number_format((float)$m->cantidad,0) }}
               </td>
 
-              <td class="px-4 py-3 text-right">
-                {{ number_format((float)($m->costo_unitario ?? 0), 2) }}
+              <td class="text-right font-black">
+                ${{ number_format((float)($m->costo_unitario ?? 0),2) }}
               </td>
 
-              <td class="px-4 py-3 text-slate-700">
-                {{ $m->referencia ?? '—' }}
+              <td class="font-semibold text-slate-600">
+                {{ $m->referencia ?: '—' }}
               </td>
+
             </tr>
+
           @empty
+
             <tr>
-              <td class="px-4 py-10 text-center text-slate-500" colspan="8">
+              <td colspan="8" class="text-center py-14 text-slate-500 font-bold">
                 No hay movimientos registrados.
               </td>
             </tr>
-          @endforelse
-        </tbody>
-      </table>
-    </div>
-  </div>
 
-  <div class="mt-4 text-xs text-slate-500">
-    Mostrando los últimos {{ is_countable($movs) ? count($movs) : 0 }} movimientos.
+          @endforelse
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+    <div class="pagination-wrap">
+      {{ $movs->links() }}
+    </div>
+
   </div>
 
 </div>

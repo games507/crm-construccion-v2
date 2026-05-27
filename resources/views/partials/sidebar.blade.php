@@ -3,31 +3,46 @@
   x-data="sidebarMenu"
   x-init="init()"
   :class="$store.sidebar.collapsed ? 'w-[84px]' : 'w-[280px]'"
-  class="sticky top-0 min-h-screen shrink-0 border-r border-slate-200/70 bg-white/80 backdrop-blur transition-[width] duration-300 flex flex-col"
+  class="sticky top-0 min-h-screen shrink-0 border-r border-slate-200/70 bg-white/85 backdrop-blur-xl transition-[width] duration-300 flex flex-col"
 >
   @php
     use App\Support\EmpresaScope;
     use App\Models\Empresa;
 
+    /*
+    |--------------------------------------------------------------------------
+    | ICONOS MODERNOS - estilo SaaS / Lucide
+    |--------------------------------------------------------------------------
+    */
     $icon = function($name){
-      if($name==='dashboard') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3.75 3.75h7.5v7.5h-7.5v-7.5Zm9 0h7.5v7.5h-7.5v-7.5Zm-9 9h7.5v7.5h-7.5v-7.5Zm9 0h7.5v7.5h-7.5v-7.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
-      if($name==='shield') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2.25l7.5 4.5v6.75c0 4.477-3.248 8.385-7.5 9.75-4.252-1.365-7.5-5.273-7.5-9.75V6.75L12 2.25Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
-      if($name==='cube') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 7.5 12 12.75 3 7.5m18 0-9-5.25L3 7.5m18 0v9.75A2.25 2.25 0 0 1 19.875 19.2L12 23.25 4.125 19.2A2.25 2.25 0 0 1 3 17.25V7.5" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
-      if($name==='chev') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="m19.5 8.25-7.5 7.5-7.5-7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      if($name==='folder') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3.75 7.5A2.25 2.25 0 0 1 6 5.25h4.5l1.5 1.5H18A2.25 2.25 0 0 1 20.25 9v8.25A2.25 2.25 0 0 1 18 19.5H6A2.25 2.25 0 0 1 3.75 17.25V7.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
-      if($name==='list') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M8.25 6.75h12m-12 5.25h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm0 5.25h.007v.008H3.75V12Zm0 5.25h.007v.008H3.75v-.008Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-      if($name==='arrows') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7.5 7.5h12m0 0-3-3m3 3-3 3M16.5 16.5h-12m0 0 3 3m-3-3 3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      if($name==='box') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20.25 7.5v11.25A2.25 2.25 0 0 1 18 21H6a2.25 2.25 0 0 1-2.25-2.25V7.5m16.5 0A2.25 2.25 0 0 0 18 5.25H6A2.25 2.25 0 0 0 3.75 7.5m16.5 0v.375c0 .621-.504 1.125-1.125 1.125H4.875A1.125 1.125 0 0 1 3.75 7.875V7.5" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
-      if($name==='warehouse') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3.75 21h16.5M4.5 3h15l1.5 6H3L4.5 3Zm1.5 6v12m12-12v12M9 21v-6h6v6" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
-      if($name==='clock') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 6v6l4 2m6-2a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      if($name==='building') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3.75 21h16.5M6 21V4.5A2.25 2.25 0 0 1 8.25 2.25h7.5A2.25 2.25 0 0 1 18 4.5V21M9 6.75h.008V6.758H9V6.75Zm0 3h.008V9.758H9V9.75Zm0 3h.008v.008H9v-.008Zm6-6h.008V6.758H15V6.75Zm0 3h.008V9.758H15V9.75Zm0 3h.008v.008H15v-.008Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
-      if($name==='users') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" stroke="currentColor" stroke-width="2"/><path d="M4.5 20.118a7.5 7.5 0 0 1 15 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.5-1.632Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
-      if($name==='roles') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2.25l7.5 4.5v6.75c0 4.477-3.248 8.385-7.5 9.75-4.252-1.365-7.5-5.273-7.5-9.75V6.75L12 2.25Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 12.75 11.25 15 15 9.75" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      if($name==='key') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15.75 5.25a4.5 4.5 0 1 1-8.584 2.11c-.23.52-.35 1.094-.35 1.69v2.25h3v3h3v3h3V9.05a4.48 4.48 0 0 1 1.934-3.8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      if($name==='money') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="12" rx="2" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2.5" stroke="currentColor" stroke-width="2"/><path d="M6 12h.01M18 12h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-      if($name==='tasks') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M4 6l1.25 1.25L7.5 5M4 12l1.25 1.25L7.5 11M4 18l1.25 1.25L7.5 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      $base = 'width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
 
-      return '';
+      return match($name) {
+        'dashboard' => '<svg '.$base.'><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>',
+        'chev' => '<svg '.$base.'><path d="m6 9 6 6 6-6"/></svg>',
+        'shield' => '<svg '.$base.'><path d="M20 13c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V5l8-3 8 3v8Z"/><path d="m9 12 2 2 4-5"/></svg>',
+        'building' => '<svg '.$base.'><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9h1"/><path d="M9 13h1"/><path d="M9 17h1"/></svg>',
+        'folder' => '<svg '.$base.'><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.5L10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z"/></svg>',
+        'tasks' => '<svg '.$base.'><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="m3 6 1 1 2-2"/><path d="m3 12 1 1 2-2"/><path d="m3 18 1 1 2-2"/></svg>',
+        'cube' => '<svg '.$base.'><path d="m21 8-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>',
+        'list' => '<svg '.$base.'><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>',
+        'arrows' => '<svg '.$base.'><path d="M17 3l4 4-4 4"/><path d="M3 7h18"/><path d="M7 21l-4-4 4-4"/><path d="M21 17H3"/></svg>',
+        'box' => '<svg '.$base.'><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>',
+        'warehouse' => '<svg '.$base.'><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/><path d="M6 18h12"/><path d="M6 14h12"/><path d="M6 10h12"/></svg>',
+        'clock' => '<svg '.$base.'><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+        'users' => '<svg '.$base.'><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+        'roles' => '<svg '.$base.'><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-5"/></svg>',
+        'key' => '<svg '.$base.'><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>',
+        'money' => '<svg '.$base.'><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01"/><path d="M18 12h.01"/></svg>',
+        'wallet' => '<svg '.$base.'><path d="M20 12V8H6a2 2 0 0 1 0-4h12v4"/><path d="M4 6v14a2 2 0 0 0 2 2h14v-6"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>',
+        'receipt' => '<svg '.$base.'><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2Z"/><path d="M8 7h8"/><path d="M8 12h8"/><path d="M8 17h5"/></svg>',
+        'coins' => '<svg '.$base.'><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/></svg>',
+        'truck' => '<svg '.$base.'><path d="M10 17h4V5H2v12h3"/><path d="M14 17h1"/><path d="M19 17h3v-6l-3-4h-5"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>',
+        'supplier' => '<svg '.$base.'><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg>',
+        'cart' => '<svg '.$base.'><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57L22 7H5.12"/></svg>',
+        'settings' => '<svg '.$base.'><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.51a2 2 0 0 1 1-1.72l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2Z"/><circle cx="12" cy="12" r="3"/></svg>',
+        default => '<svg '.$base.'><circle cx="12" cy="12" r="10"/></svg>',
+      };
     };
 
     $user = auth()->user();
@@ -36,40 +51,51 @@
     $isSuperAdmin = false;
     if ($user) {
       if (method_exists($user, 'hasRole')) {
-        $isSuperAdmin = $user->hasRole('SuperAdmin');
+        $isSuperAdmin = $user->hasRole('SuperAdmin') || $user->hasRole('Super Admin');
       } elseif (isset($user->is_superadmin)) {
         $isSuperAdmin = (bool) $user->is_superadmin;
       }
     }
 
-    $ctxEmpresaId = EmpresaScope::getId();
-    $hasCtx = EmpresaScope::has();
+$ctxEmpresaId = EmpresaScope::getId();
+$hasCtx = EmpresaScope::has();
 
-    $ctxEmpresa = null;
-    if ($isSuperAdmin && $hasCtx && $ctxEmpresaId) {
-      $ctxEmpresa = Empresa::select('id','nombre')->find($ctxEmpresaId);
-      if (!$ctxEmpresa) $hasCtx = false;
-    }
+$ctxEmpresa = null;
+
+if ($isSuperAdmin && $ctxEmpresaId) {
+  $ctxEmpresa = Empresa::select('id','nombre','logo_path')->find($ctxEmpresaId);
+}
+
+if ($isSuperAdmin && !$ctxEmpresa) {
+  $ctxEmpresa = Empresa::select('id','nombre','logo_path')->orderBy('id')->first();
+}
+
+$brandEmpresa = $isSuperAdmin
+  ? $ctxEmpresa
+  : ($empresa ?: Empresa::select('id','nombre','logo_path')->orderBy('id')->first());
+
+$hasCtx = (bool) $brandEmpresa;
+
+    $logoPath = (string) ($brandEmpresa?->logo_path ?? '');
+    $hasLogo = $logoPath !== '';
+    $logoUrl = $hasLogo ? asset('storage/' . ltrim($logoPath, '/')) : null;
 
     $path = trim(request()->path(), '/');
     $pathNoApp = preg_replace('#^app/?#', '', $path);
-
     $starts = fn($p) => str_starts_with(trim($pathNoApp,'/'), trim($p,'/'));
 
     $dashActive = request()->routeIs('dashboard');
     $invActive = $starts('inventario');
-    $adminActive = $starts('admin');
 
-    $proyActive = request()->routeIs('admin.proyectos*') || request()->routeIs('admin.cuentas*');
+    $proyActive = request()->routeIs('admin.proyectos*');
+    $comprasActive = request()->routeIs('admin.proveedores*');
+$finanzasActive =
+    request()->routeIs('admin.cuentas*') ||
+    request()->routeIs('admin.cobros*') ||
+    request()->routeIs('admin.ingresos*') ||
+    request()->routeIs('admin.ordenes_compra*');
 
-    $canAdminGlobal = $isSuperAdmin || ($user && (
-      $user->can('admin.ver') ||
-      $user->can('usuarios.ver') ||
-      $user->can('roles.ver') ||
-      $user->can('permisos.ver') ||
-      $user->can('empresas.ver') ||
-      $user->can('proyectos.ver')
-    ));
+    $adminActive = $starts('admin') && !$proyActive && !$comprasActive && !$finanzasActive;
 
     $canMiEmpresa       = $user && $user->can('miempresa.ver');
     $canUsuariosEmpresa = $user && $user->can('usuarios.ver');
@@ -77,88 +103,172 @@
     $canPermisosEmpresa = $user && $user->can('permisos.ver');
 
     $canConfigEmpresaMenu = !$isSuperAdmin && ($canMiEmpresa || $canUsuariosEmpresa || $canRolesEmpresa || $canPermisosEmpresa);
-$canInventarioPorPermiso = $user && (
-  $user->can('inventario.ver') ||
-  $user->can('materiales.ver') ||
-  $user->can('almacenes.ver') ||
-  $user->can('kardex.ver') ||
-  $user->can('movimientos.ver')
-);
-    $canInventario = $isSuperAdmin
+
+    $canInventarioPorPermiso = $user && (
+      $user->can('inventario.ver') ||
+      $user->can('materiales.ver') ||
+      $user->can('almacenes.ver') ||
+      $user->can('kardex.ver') ||
+      $user->can('movimientos.ver')
+    );
+
+    $canInventario = $isSuperAdmin ? $hasCtx : $canInventarioPorPermiso;
+
+    $canProyectos = $isSuperAdmin
       ? $hasCtx
-      : $canInventarioPorPermiso;
+      : ($user && (
+          $user->can('proyectos.ver') ||
+          $user->can('mis_tareas.ver')
+      ));
 
-$canProyectos = $isSuperAdmin
-  ? $hasCtx
-  : ($user && (
-      $user->can('proyectos.ver') ||
-      $user->can('mis_tareas.ver') ||
-      $user->can('cuentas.ver')
-  ));
+    $canCompras = $isSuperAdmin
+      ? $hasCtx
+      : ($user && (
+          $user->can('proyectos.ver') ||
+          $user->can('cuentas.ver') ||
+          $user->can('admin.ver')
+      ));
 
-    $logoPath = (string) ($empresa?->logo_path ?? '');
-    $hasLogo = $logoPath !== '';
-    $logoUrl = $hasLogo ? asset('storage/' . ltrim($logoPath, '/')) : null;
+    $canFinanzas = $isSuperAdmin
+      ? $hasCtx
+      : ($user && (
+          $user->can('cuentas.ver') ||
+          $user->can('cobros.ver') ||
+          $user->can('ingresos.ver') ||
+          $user->can('flujo.ver')
+      ));
+
+    $canAdminGlobal = $isSuperAdmin || ($user && (
+      $user->can('admin.ver') ||
+      $user->can('usuarios.ver') ||
+      $user->can('roles.ver') ||
+      $user->can('permisos.ver') ||
+      $user->can('empresas.ver')
+    ));
 
     $empresasList = collect();
     if ($isSuperAdmin) {
       $empresasList = Empresa::orderBy('nombre')->get(['id','nombre']);
     }
+
+    $navItem = function($route, $label, $iconName, $active, $subtitle = null) use ($icon) {
+      $activeClass = $active
+        ? 'bg-gradient-to-r from-sky-50 to-blue-50 text-slate-950 ring-1 ring-sky-100'
+        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950';
+
+      $iconClass = $active
+        ? 'bg-sky-100 text-sky-700'
+        : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-800';
+
+      return '
+        <a href="'.e($route).'"
+           class="group flex items-center gap-3 rounded-2xl px-2.5 py-2 text-sm font-bold transition '.$activeClass.'">
+          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition '.$iconClass.'">
+            '.$icon($iconName).'
+          </span>
+          <span class="min-w-0 flex-1">
+            <span class="block truncate">'.$label.'</span>
+            '.($subtitle ? '<span class="block truncate text-[11px] font-bold text-slate-400">'.$subtitle.'</span>' : '').'
+          </span>
+        </a>
+      ';
+    };
   @endphp
 
-  {{-- BRAND --}}
-  <div class="h-16 px-3 flex items-center gap-3 border-b border-slate-200/70">
-    <div class="h-10 w-10 rounded-2xl bg-indigo-600 text-white grid place-items-center font-black shadow-sm overflow-hidden">
-      @if(!$isSuperAdmin && $hasLogo)
-        <img src="{{ $logoUrl }}" alt="Logo {{ $empresa?->nombre ?? '' }}"
-             class="h-10 w-10 object-contain bg-white p-1" loading="lazy">
-      @else
-        {{ $isSuperAdmin ? 'SA' : strtoupper(substr($empresa?->nombre ?? 'E', 0, 1)) }}
-      @endif
-    </div>
+{{-- BRAND --}}
+<div class="h-16 px-3 flex items-center gap-3 border-b border-slate-200/70">
 
-    <div class="min-w-0 flex-1" x-show="!$store.sidebar.collapsed" x-transition.opacity.duration.150ms>
-      <div class="text-sm font-black text-slate-900 truncate">
-        {{ $isSuperAdmin ? 'Panel Super Admin' : 'CRM Construcción' }}
-      </div>
-      <div class="text-xs font-bold text-slate-500 truncate">
-        @if($isSuperAdmin)
-          {{ $hasCtx ? ('Empresa: ' . ($ctxEmpresa?->nombre ?? 'Seleccionada')) : 'Todas las empresas' }}
-        @else
-          {{ $empresa?->nombre ?? 'Sin empresa' }}
-        @endif
-      </div>
-    </div>
+  <div class="h-11 w-11 rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden flex items-center justify-center shrink-0">
 
-    <button type="button"
-      class="ml-auto inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white p-2 shadow-sm hover:bg-slate-50 active:scale-[.98]"
-      @click="$store.sidebar.toggle()"
-      :title="$store.sidebar.collapsed ? 'Expandir menú' : 'Colapsar menú'"
-      aria-label="Toggle sidebar"
-    >
-      <svg x-show="!$store.sidebar.collapsed" xmlns="http://www.w3.org/2000/svg"
-           class="h-5 w-5 text-slate-700" fill="none" viewBox="0 0 24 24"
-           stroke="currentColor" stroke-width="1.8">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/>
-      </svg>
-      <svg x-show="$store.sidebar.collapsed" xmlns="http://www.w3.org/2000/svg"
-           class="h-5 w-5 text-slate-700" fill="none" viewBox="0 0 24 24"
-           stroke="currentColor" stroke-width="1.8">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5 15.75 12l-7.5 7.5"/>
-      </svg>
-    </button>
+    @if($hasLogo)
+
+      <img
+        src="{{ $logoUrl }}"
+        alt="Logo {{ $brandEmpresa?->nombre ?? 'Empresa' }}"
+        class="h-full w-full object-cover"
+        loading="lazy"
+        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+      >
+
+      <div
+        style="display:none;"
+        class="h-full w-full items-center justify-center bg-gradient-to-br from-sky-600 to-slate-900 text-white font-black text-sm"
+      >
+        {{ strtoupper(substr($brandEmpresa?->nombre ?? 'V', 0, 1)) }}
+      </div>
+
+    @else
+
+      <div class="h-full w-full flex items-center justify-center bg-gradient-to-br from-sky-600 to-slate-900 text-white font-black text-sm">
+        {{ $isSuperAdmin && !$brandEmpresa ? 'SA' : strtoupper(substr($brandEmpresa?->nombre ?? 'V', 0, 1)) }}
+      </div>
+
+    @endif
+
   </div>
 
+  <div
+    class="min-w-0 flex-1"
+    x-show="!$store.sidebar.collapsed"
+    x-transition.opacity.duration.150ms
+  >
+    <div class="text-sm font-black text-slate-900 truncate">
+      {{ $isSuperAdmin ? 'Panel Super Admin' : 'VerticeSoft' }}
+    </div>
+
+    <div class="text-xs font-bold text-slate-500 truncate">
+      @if($isSuperAdmin)
+        {{ $hasCtx ? ('Empresa: ' . ($ctxEmpresa?->nombre ?? 'Seleccionada')) : 'Selecciona una empresa' }}
+      @else
+        {{ $brandEmpresa?->nombre ?? 'Sin empresa' }}
+      @endif
+    </div>
+  </div>
+
+  <button
+    type="button"
+    class="ml-auto inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white p-2 shadow-sm hover:bg-slate-50 active:scale-[.98]"
+    @click="$store.sidebar.toggle()"
+    :title="$store.sidebar.collapsed ? 'Expandir menú' : 'Colapsar menú'"
+    aria-label="Toggle sidebar"
+  >
+    <svg
+      x-show="!$store.sidebar.collapsed"
+      xmlns="http://www.w3.org/2000/svg"
+      class="h-5 w-5 text-slate-700"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="1.8"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/>
+    </svg>
+
+    <svg
+      x-show="$store.sidebar.collapsed"
+      xmlns="http://www.w3.org/2000/svg"
+      class="h-5 w-5 text-slate-700"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="1.8"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5 15.75 12l-7.5 7.5"/>
+    </svg>
+
+  </button>
+
+</div>
   {{-- SELECTOR EMPRESA --}}
   @if($isSuperAdmin)
     <div class="px-3 py-3 border-b border-slate-200/70" x-show="!$store.sidebar.collapsed" x-transition.opacity.duration.150ms>
-      <div class="rounded-2xl border border-slate-200 bg-white/70 p-3">
+      <div class="rounded-2xl border border-slate-200 bg-white/80 p-3 shadow-sm">
         <div class="text-xs font-black text-slate-700 uppercase tracking-wide">Contexto de empresa</div>
 
         <form method="POST" action="{{ route('admin.empresa_context.set') }}" class="mt-2 space-y-2">
           @csrf
           <select name="empresa_id"
-            class="w-full h-10 rounded-xl bg-white border border-slate-200/70 shadow-sm focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 text-sm font-semibold text-slate-900 px-3"
+            class="w-full h-10 rounded-xl bg-white border border-slate-200/70 shadow-sm focus:ring-2 focus:ring-sky-200 focus:border-sky-300 text-sm font-semibold text-slate-900 px-3"
             required>
             <option value="" disabled {{ !$hasCtx ? 'selected' : '' }}>— Selecciona una empresa —</option>
             @foreach($empresasList as $e)
@@ -169,7 +279,7 @@ $canProyectos = $isSuperAdmin
           </select>
 
           <button type="submit"
-            class="w-full inline-flex items-center justify-center rounded-xl h-10 text-sm font-extrabold bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
+            class="w-full inline-flex items-center justify-center rounded-xl h-10 text-sm font-extrabold bg-sky-700 text-white hover:bg-sky-800 shadow-sm">
             Aplicar
           </button>
         </form>
@@ -191,9 +301,9 @@ $canProyectos = $isSuperAdmin
     {{-- DASHBOARD --}}
     <a href="{{ route('dashboard') }}"
        class="group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-extrabold transition
-              {{ $dashActive ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900' }}"
+              {{ $dashActive ? 'bg-gradient-to-r from-slate-900 to-sky-800 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900' }}"
        :class="$store.sidebar.collapsed ? 'justify-center' : ''">
-      <span class="h-5 w-5 shrink-0 {{ $dashActive ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-900' }}">
+      <span class="h-5 w-5 shrink-0 {{ $dashActive ? 'text-white' : 'text-slate-500 group-hover:text-slate-900' }}">
         {!! $icon('dashboard') !!}
       </span>
       <span x-show="!$store.sidebar.collapsed" x-transition.opacity.duration.150ms class="truncate">Dashboard</span>
@@ -209,7 +319,7 @@ $canProyectos = $isSuperAdmin
           @click="toggleGroup('proyectos')"
           title="Proyectos"
         >
-          <span class="h-5 w-5 shrink-0 {{ $proyActive ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-900' }}">
+          <span class="h-5 w-5 shrink-0 {{ $proyActive ? 'text-sky-700' : 'text-slate-500 group-hover:text-slate-900' }}">
             {!! $icon('folder') !!}
           </span>
 
@@ -233,102 +343,54 @@ $canProyectos = $isSuperAdmin
              class="mt-1 pl-4">
           <div class="border-l border-slate-200 pl-3 space-y-1">
 
-            <a href="{{ route('admin.proyectos') }}"
-               class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
-                      {{ (request()->routeIs('admin.proyectos') || request()->routeIs('admin.proyectos.create') || request()->routeIs('admin.proyectos.edit') || request()->routeIs('admin.proyectos.show')) ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-              <span class="h-4 w-4 {{ (request()->routeIs('admin.proyectos') || request()->routeIs('admin.proyectos.create') || request()->routeIs('admin.proyectos.edit') || request()->routeIs('admin.proyectos.show')) ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
-                {!! $icon('folder') !!}
-              </span>
-              <span>Listado</span>
-            </a>
+            {!! $navItem(
+              route('admin.proyectos'),
+              'Listado',
+              'folder',
+              request()->routeIs('admin.proyectos') || request()->routeIs('admin.proyectos.create') || request()->routeIs('admin.proyectos.edit') || request()->routeIs('admin.proyectos.show'),
+              'Obras y avances'
+            ) !!}
 
-   @can('mis_tareas.ver')
-<a href="{{ route('admin.proyectos.mis_tareas') }}"
-   class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
-          {{ request()->routeIs('admin.proyectos.mis_tareas*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-  <span class="h-4 w-4 {{ request()->routeIs('admin.proyectos.mis_tareas*') ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-700' }}">
-    {!! $icon('tasks') !!}
-  </span>
-  <span>Mis tareas</span>
-</a>
-@endcan
-           @can('cuentas.ver')
-<a href="{{ route('admin.cuentas.index') }}"
-   class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
-          {{ request()->routeIs('admin.cuentas*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-  <span class="h-4 w-4 {{ request()->routeIs('admin.cuentas*') ? 'text-emerald-600' : 'text-slate-400 group-hover:text-slate-700' }}">
-    {!! $icon('money') !!}
-  </span>
-  
-  <span>Cuentas por pagar</span>
-</a>
-@can('cobros.ver')
-<a href="{{ route('admin.cobros.index') }}"
-   class="group flex items-center gap-3 px-3 py-2 rounded-2xl transition
-   {{ request()->routeIs('admin.cobros.*')
-      ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+            @can('mis_tareas.ver')
+              {!! $navItem(
+                route('admin.proyectos.mis_tareas'),
+                'Mis tareas',
+                'tasks',
+                request()->routeIs('admin.proyectos.mis_tareas*'),
+                'Asignaciones'
+              ) !!}
+            @endcan
 
-  <span class="flex h-9 w-9 items-center justify-center rounded-xl
-    {{ request()->routeIs('admin.cobros.*')
-      ? 'bg-emerald-100 text-emerald-700'
-      : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200' }}">
-
-    <svg xmlns="http://www.w3.org/2000/svg"
-         class="h-5 w-5"
-         fill="none"
-         viewBox="0 0 24 24"
-         stroke="currentColor"
-         stroke-width="2">
-      <path stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 8c-3.866 0-7 1.79-7 4s3.134 4 7 4 7-1.79 7-4-3.134-4-7-4Zm0 0V4m0 12v4" />
-    </svg>
-
-  </span>
-
-  <div class="flex-1 min-w-0">
-    <div class="truncate text-sm font-bold">
-      Cuentas por cobrar
-    </div>
-
-    <div class="truncate text-[11px] text-slate-400">
-      Clientes y cobros
-    </div>
-  </div>
-</a>
-@endcan
-@endcan
           </div>
         </div>
       </div>
     @endif
 
-    {{-- SUPER ADMIN --}}
-    @if($isSuperAdmin)
+    {{-- COMPRAS --}}
+    @if($canCompras)
       <div class="pt-2">
         <button type="button"
           class="w-full group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-extrabold transition
-                 {{ $adminActive && !$proyActive ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900' }}"
+                 {{ $comprasActive ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900' }}"
           :class="$store.sidebar.collapsed ? 'justify-center' : ''"
-          @click="toggleGroup('admin_global')"
-          title="Super Admin"
+          @click="toggleGroup('compras')"
+          title="Compras"
         >
-          <span class="h-5 w-5 shrink-0 {{ $adminActive && !$proyActive ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-900' }}">
-            {!! $icon('shield') !!}
+          <span class="h-5 w-5 shrink-0 {{ $comprasActive ? 'text-sky-700' : 'text-slate-500 group-hover:text-slate-900' }}">
+            {!! $icon('cart') !!}
           </span>
 
           <span class="flex-1 text-left" x-show="!$store.sidebar.collapsed" x-transition.opacity.duration.150ms>
-            Super Admin
+            Compras
           </span>
 
           <span x-show="!$store.sidebar.collapsed" class="h-5 w-5 text-slate-400 transition-transform"
-                :class="open.admin_global ? 'rotate-180' : ''">
+                :class="open.compras ? 'rotate-180' : ''">
             {!! $icon('chev') !!}
           </span>
         </button>
 
-        <div x-show="open.admin_global && !$store.sidebar.collapsed"
+        <div x-show="open.compras && !$store.sidebar.collapsed"
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0 -translate-y-1"
              x-transition:enter-end="opacity-100 translate-y-0"
@@ -338,49 +400,96 @@ $canProyectos = $isSuperAdmin
              class="mt-1 pl-4">
           <div class="border-l border-slate-200 pl-3 space-y-1">
 
-            <a href="{{ route('admin.empresas') }}"
-               class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
-                      {{ request()->routeIs('admin.empresas*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-              <span class="h-4 w-4 {{ request()->routeIs('admin.empresas*') ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
-                {!! $icon('building') !!}
-              </span>
-              <span>Empresas</span>
-            </a>
-
-            <a href="{{ route('admin.usuarios') }}"
-               class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
-                      {{ request()->routeIs('admin.usuarios*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-              <span class="h-4 w-4 {{ request()->routeIs('admin.usuarios*') ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
-                {!! $icon('users') !!}
-              </span>
-              <span>Usuarios</span>
-            </a>
-
-            <a href="{{ route('admin.roles') }}"
-               class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
-                      {{ request()->routeIs('admin.roles*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-              <span class="h-4 w-4 {{ request()->routeIs('admin.roles*') ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
-                {!! $icon('roles') !!}
-              </span>
-              <span>Roles</span>
-            </a>
-
-            <a href="{{ route('admin.permisos') }}"
-               class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
-                      {{ request()->routeIs('admin.permisos*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-              <span class="h-4 w-4 {{ request()->routeIs('admin.permisos*') ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
-                {!! $icon('key') !!}
-              </span>
-              <span>Permisos</span>
-            </a>
+            {!! $navItem(
+              route('admin.proveedores.index'),
+              'Proveedores',
+              'supplier',
+              request()->routeIs('admin.proveedores*'),
+              'Catálogo comercial'
+            ) !!}
 
           </div>
         </div>
       </div>
     @endif
 
+    {{-- FINANZAS --}}
+    @if($canFinanzas)
+      <div class="pt-2">
+        <button type="button"
+          class="w-full group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-extrabold transition
+                 {{ $finanzasActive ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900' }}"
+          :class="$store.sidebar.collapsed ? 'justify-center' : ''"
+          @click="toggleGroup('finanzas')"
+          title="Finanzas"
+        >
+          <span class="h-5 w-5 shrink-0 {{ $finanzasActive ? 'text-emerald-700' : 'text-slate-500 group-hover:text-slate-900' }}">
+            {!! $icon('wallet') !!}
+          </span>
 
-    
+          <span class="flex-1 text-left" x-show="!$store.sidebar.collapsed" x-transition.opacity.duration.150ms>
+            Finanzas
+          </span>
+
+          <span x-show="!$store.sidebar.collapsed" class="h-5 w-5 text-slate-400 transition-transform"
+                :class="open.finanzas ? 'rotate-180' : ''">
+            {!! $icon('chev') !!}
+          </span>
+        </button>
+
+        <div x-show="open.finanzas && !$store.sidebar.collapsed"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 -translate-y-1"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 -translate-y-1"
+             class="mt-1 pl-4">
+          <div class="border-l border-slate-200 pl-3 space-y-1">
+
+            @can('cuentas.ver')
+              {!! $navItem(
+                route('admin.cuentas.index'),
+                'Cuentas por pagar',
+                'receipt',
+                request()->routeIs('admin.cuentas*'),
+                'Proveedores y pagos'
+              ) !!}
+            @endcan
+
+            @can('cobros.ver')
+              {!! $navItem(
+                route('admin.cobros.index'),
+                'Cuentas por cobrar',
+                'coins',
+                request()->routeIs('admin.cobros*'),
+                'Clientes y cobros'
+              ) !!}
+            @endcan
+
+            @can('ingresos.ver')
+              {!! $navItem(
+                route('admin.ingresos.index'),
+                'Ingresos',
+                'money',
+                request()->routeIs('admin.ingresos*'),
+                'Entradas de dinero'
+              ) !!}
+            @endcan
+@can('ordenes_compra.ver')
+  {!! $navItem(
+    route('admin.ordenes_compra.index'),
+    'Órdenes de compra',
+    'receipt',
+    request()->routeIs('admin.ordenes_compra*'),
+    'Compras y abastecimiento'
+  ) !!}
+@endcan
+          </div>
+        </div>
+      </div>
+    @endif
+
     {{-- INVENTARIO --}}
     @if($canInventario)
       <div class="pt-2">
@@ -391,7 +500,7 @@ $canProyectos = $isSuperAdmin
           @click="toggleGroup('inventario')"
           title="Inventario"
         >
-          <span class="h-5 w-5 shrink-0 {{ $invActive ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-900' }}">
+          <span class="h-5 w-5 shrink-0 {{ $invActive ? 'text-sky-700' : 'text-slate-500 group-hover:text-slate-900' }}">
             {!! $icon('cube') !!}
           </span>
 
@@ -415,50 +524,55 @@ $canProyectos = $isSuperAdmin
              class="mt-1 pl-4">
           <div class="border-l border-slate-200 pl-3 space-y-1">
 
-            <a href="{{ route('inventario.existencias') }}"
-               class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
-                      {{ request()->routeIs('inventario.existencias') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-              <span class="h-4 w-4 {{ request()->routeIs('inventario.existencias') ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
-                {!! $icon('list') !!}
-              </span>
-              <span>Existencias</span>
-            </a>
+            {!! $navItem(route('inventario.existencias'), 'Existencias', 'list', request()->routeIs('inventario.existencias'), 'Stock actual') !!}
+            {!! $navItem(route('inventario.movimientos'), 'Movimientos', 'arrows', request()->routeIs('inventario.movimientos*'), 'Entradas y salidas') !!}
+            {!! $navItem(route('inventario.materiales'), 'Materiales', 'box', request()->routeIs('inventario.materiales*'), 'Catálogo') !!}
+            {!! $navItem(route('inventario.almacenes'), 'Almacenes', 'warehouse', request()->routeIs('inventario.almacenes*'), 'Ubicaciones') !!}
+            {!! $navItem(route('inventario.kardex'), 'Kardex', 'clock', request()->routeIs('inventario.kardex*'), 'Historial') !!}
 
-            <a href="{{ route('inventario.movimientos') }}"
-               class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
-                      {{ request()->routeIs('inventario.movimientos*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-              <span class="h-4 w-4 {{ request()->routeIs('inventario.movimientos*') ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
-                {!! $icon('arrows') !!}
-              </span>
-              <span>Movimientos</span>
-            </a>
+          </div>
+        </div>
+      </div>
+    @endif
 
-            <a href="{{ route('inventario.materiales') }}"
-               class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
-                      {{ request()->routeIs('inventario.materiales*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-              <span class="h-4 w-4 {{ request()->routeIs('inventario.materiales*') ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
-                {!! $icon('box') !!}
-              </span>
-              <span>Materiales</span>
-            </a>
+    {{-- SUPER ADMIN --}}
+    @if($isSuperAdmin)
+      <div class="pt-2">
+        <button type="button"
+          class="w-full group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-extrabold transition
+                 {{ $adminActive ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900' }}"
+          :class="$store.sidebar.collapsed ? 'justify-center' : ''"
+          @click="toggleGroup('admin_global')"
+          title="Super Admin"
+        >
+          <span class="h-5 w-5 shrink-0 {{ $adminActive ? 'text-sky-700' : 'text-slate-500 group-hover:text-slate-900' }}">
+            {!! $icon('shield') !!}
+          </span>
 
-            <a href="{{ route('inventario.almacenes') }}"
-               class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
-                      {{ request()->routeIs('inventario.almacenes*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-              <span class="h-4 w-4 {{ request()->routeIs('inventario.almacenes*') ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
-                {!! $icon('warehouse') !!}
-              </span>
-              <span>Almacenes</span>
-            </a>
+          <span class="flex-1 text-left" x-show="!$store.sidebar.collapsed" x-transition.opacity.duration.150ms>
+            Super Admin
+          </span>
 
-            <a href="{{ route('inventario.kardex') }}"
-               class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
-                      {{ request()->routeIs('inventario.kardex*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-              <span class="h-4 w-4 {{ request()->routeIs('inventario.kardex*') ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
-                {!! $icon('clock') !!}
-              </span>
-              <span>Kardex</span>
-            </a>
+          <span x-show="!$store.sidebar.collapsed" class="h-5 w-5 text-slate-400 transition-transform"
+                :class="open.admin_global ? 'rotate-180' : ''">
+            {!! $icon('chev') !!}
+          </span>
+        </button>
+
+        <div x-show="open.admin_global && !$store.sidebar.collapsed"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 -translate-y-1"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 -translate-y-1"
+             class="mt-1 pl-4">
+          <div class="border-l border-slate-200 pl-3 space-y-1">
+
+            {!! $navItem(route('admin.empresas'), 'Empresas', 'building', request()->routeIs('admin.empresas*'), 'Multiempresa') !!}
+            {!! $navItem(route('admin.usuarios'), 'Usuarios', 'users', request()->routeIs('admin.usuarios*'), 'Accesos') !!}
+            {!! $navItem(route('admin.roles'), 'Roles', 'roles', request()->routeIs('admin.roles*'), 'Perfiles') !!}
+            {!! $navItem(route('admin.permisos'), 'Permisos', 'key', request()->routeIs('admin.permisos*'), 'Seguridad') !!}
 
           </div>
         </div>
@@ -470,13 +584,13 @@ $canProyectos = $isSuperAdmin
       <div class="pt-2">
         <button type="button"
           class="w-full group flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-extrabold transition
-                 {{ request()->routeIs('admin.*') && !$isSuperAdmin && !$proyActive ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900' }}"
+                 {{ request()->routeIs('admin.*') && !$isSuperAdmin && !$proyActive && !$comprasActive && !$finanzasActive ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900' }}"
           :class="$store.sidebar.collapsed ? 'justify-center' : ''"
           @click="toggleGroup('config_empresa')"
           title="Configuración"
         >
-          <span class="h-5 w-5 shrink-0 {{ request()->routeIs('admin.*') && !$isSuperAdmin && !$proyActive ? 'text-slate-900' : 'text-slate-500 group-hover:text-slate-900' }}">
-            {!! $icon('shield') !!}
+          <span class="h-5 w-5 shrink-0 {{ request()->routeIs('admin.*') && !$isSuperAdmin && !$proyActive && !$comprasActive && !$finanzasActive ? 'text-sky-700' : 'text-slate-500 group-hover:text-slate-900' }}">
+            {!! $icon('settings') !!}
           </span>
 
           <span class="flex-1 text-left" x-show="!$store.sidebar.collapsed" x-transition.opacity.duration.150ms>
@@ -500,47 +614,19 @@ $canProyectos = $isSuperAdmin
           <div class="border-l border-slate-200 pl-3 space-y-1">
 
             @if($canMiEmpresa)
-              <a href="{{ route('admin.mi_empresa.edit') }}"
-                 class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
-                        {{ request()->routeIs('admin.mi_empresa.*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-                <span class="h-4 w-4 {{ request()->routeIs('admin.mi_empresa.*') ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
-                  {!! $icon('building') !!}
-                </span>
-                <span>Mi empresa</span>
-              </a>
+              {!! $navItem(route('admin.mi_empresa.edit'), 'Mi empresa', 'building', request()->routeIs('admin.mi_empresa.*'), 'Datos generales') !!}
             @endif
 
             @if($canUsuariosEmpresa)
-              <a href="{{ route('admin.usuarios') }}"
-                 class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
-                        {{ request()->routeIs('admin.usuarios*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-                <span class="h-4 w-4 {{ request()->routeIs('admin.usuarios*') ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
-                  {!! $icon('users') !!}
-                </span>
-                <span>Usuarios</span>
-              </a>
+              {!! $navItem(route('admin.usuarios'), 'Usuarios', 'users', request()->routeIs('admin.usuarios*'), 'Equipo') !!}
             @endif
 
             @if($canRolesEmpresa)
-              <a href="{{ route('admin.roles') }}"
-                 class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
-                        {{ request()->routeIs('admin.roles*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-                <span class="h-4 w-4 {{ request()->routeIs('admin.roles*') ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
-                  {!! $icon('roles') !!}
-                </span>
-                <span>Roles</span>
-              </a>
+              {!! $navItem(route('admin.roles'), 'Roles', 'roles', request()->routeIs('admin.roles*'), 'Perfiles') !!}
             @endif
 
             @if($canPermisosEmpresa)
-              <a href="{{ route('admin.permisos') }}"
-                 class="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm font-bold transition
-                        {{ request()->routeIs('admin.permisos*') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
-                <span class="h-4 w-4 {{ request()->routeIs('admin.permisos*') ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700' }}">
-                  {!! $icon('key') !!}
-                </span>
-                <span>Permisos</span>
-              </a>
+              {!! $navItem(route('admin.permisos'), 'Permisos', 'key', request()->routeIs('admin.permisos*'), 'Seguridad') !!}
             @endif
 
           </div>
@@ -553,13 +639,16 @@ $canProyectos = $isSuperAdmin
   {{-- FOOTER --}}
   <div class="mt-auto border-t border-slate-200/70 p-3">
     <div class="flex items-center gap-2" :class="$store.sidebar.collapsed ? 'justify-center' : ''">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-        <path stroke-linecap="round" stroke-linejoin="round"
-              d="M12 2.25a9.75 9.75 0 1 0 0 19.5 9.75 9.75 0 0 0 0-19.5ZM12 8.25a3.75 3.75 0 1 0 0 7.5 3.75 3.75 0 0 0 0-7.5Z"/>
-      </svg>
+      <div class="h-9 w-9 rounded-2xl bg-slate-100 text-slate-500 grid place-items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 2.25a9.75 9.75 0 1 0 0 19.5 9.75 9.75 0 0 0 0-19.5ZM12 8.25a3.75 3.75 0 1 0 0 7.5 3.75 3.75 0 0 0 0-7.5Z"/>
+        </svg>
+      </div>
 
-      <div x-show="!$store.sidebar.collapsed" x-transition.opacity.duration.150ms class="text-xs font-bold text-slate-500">
-        Soporte: <span class="text-slate-900 font-extrabold">TI</span>
+      <div x-show="!$store.sidebar.collapsed" x-transition.opacity.duration.150ms class="min-w-0">
+        <div class="text-xs font-black text-slate-800 truncate">VerticeSoft</div>
+        <div class="text-[11px] font-bold text-slate-400 truncate">ERP / CRM Construcción</div>
       </div>
     </div>
   </div>

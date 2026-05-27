@@ -1,68 +1,167 @@
 @extends('layouts.base')
-@section('title','Kárdex')
+@section('title','Kárdex PRO')
 
 @section('content')
 @php
-  // ✅ Iconos (estilo inline SVG como vienes usando - "kraya")
+$desde = $desde ?? null;
+$hasta = $hasta ?? null;
+$materialSel = $materialSel ?? null;
+$almacenSel = $almacenSel ?? null;
   $kIcon = function(string $type): string {
     return match($type) {
-      'entrada'  => '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0 4 4m-4-4-4 4"/></svg>',
-      'salida'   => '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m0 0 4-4m-4 4-4-4"/></svg>',
-      'traslado' => '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 7.5h12m0 0-3-3m3 3-3 3M16.5 16.5h-12m0 0 3 3m-3-3 3-3"/></svg>',
-      'ajuste'   => '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h3m-1.5 0v12m-6-6h12"/></svg>',
-      default    => '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6h.01M12 12h.01M12 18h.01"/></svg>',
+      'entrada'  => '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>',
+      'salida'   => '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>',
+      'traslado' => '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3l4 4-4 4"/><path d="M3 7h18"/><path d="M7 21l-4-4 4-4"/><path d="M21 17H3"/></svg>',
+      'ajuste'   => '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>',
+      default    => '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>',
     };
   };
 
-  // ✅ Colores por tipo
   $pillClass = function(string $type): string {
     return match($type) {
-      'entrada'  => 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      'salida'   => 'bg-red-50 text-red-700 border-red-200',
-      'traslado' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
-      'ajuste'   => 'bg-purple-50 text-purple-700 border-purple-200',
-      default    => 'bg-slate-50 text-slate-700 border-slate-200',
+      'entrada'  => 'badge-green',
+      'salida'   => 'badge-red',
+      'traslado' => 'badge-blue',
+      'ajuste'   => 'badge-purple',
+      default    => 'badge-slate',
     };
   };
 @endphp
 
-<div class="max-w-[1100px] mx-auto space-y-4">
+<style>
+  .vs-wrap{max-width:1450px;margin:0 auto;padding:18px}
+  .vs-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+  .vs-title{font-size:30px;font-weight:950;color:#0f172a;line-height:1}
+  .vs-sub{margin-top:7px;font-size:13px;color:#64748b;font-weight:700}
+  .vs-actions{display:flex;gap:10px;flex-wrap:wrap}
 
-  {{-- Header --}}
-  <div class="bg-white/80 backdrop-blur border border-slate-200/70 rounded-2xl shadow-sm">
-    <div class="px-5 py-4 border-b border-slate-200/70 flex items-start justify-between gap-3 flex-wrap">
-      <div class="min-w-0">
-        <h2 class="text-lg font-black text-slate-900 leading-tight">Kárdex</h2>
-        <div class="text-sm font-semibold text-slate-500 mt-1">
-          Historial por <b>material</b> y <b>almacén</b>, con saldo acumulado.
-        </div>
-      </div>
+  .btn{
+    height:44px;border:none;border-radius:16px;padding:0 18px;
+    display:inline-flex;align-items:center;justify-content:center;gap:10px;
+    font-weight:900;text-decoration:none;cursor:pointer;transition:.2s ease;
+  }
+  .btn:hover{transform:translateY(-2px)}
+  .btn-primary{background:linear-gradient(135deg,#0f172a,#0b4f7d);color:white;box-shadow:0 12px 30px rgba(15,23,42,.15)}
+  .btn-primary:hover{color:white}
+  .btn-light{background:#f1f5f9;color:#334155;border:1px solid #e2e8f0}
+  .btn-light:hover{color:#334155;background:#e2e8f0}
 
-      <a
-        href="{{ route('inventario.movimientos') }}"
-        class="inline-flex items-center justify-center gap-2 rounded-xl px-4 h-11 text-sm font-extrabold
-               bg-white border border-slate-200/70 hover:bg-slate-50 shadow-sm"
-      >
-        {!! $kIcon('traslado') !!}
-        Ver movimientos
-      </a>
+  .panel{
+    background:white;border-radius:28px;border:1px solid #e2e8f0;
+    box-shadow:0 18px 50px rgba(15,23,42,.07);
+    overflow:hidden;margin-bottom:18px;
+  }
+  .panel-head{padding:18px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .panel-title{font-weight:950;color:#0f172a;font-size:16px}
+  .panel-sub{font-size:12px;color:#64748b;margin-top:4px;font-weight:700}
+  .panel-body{padding:18px}
+
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+  .span-2{grid-column:span 2}.span-3{grid-column:span 3}.span-5{grid-column:span 5}
+  @media(max-width:1000px){.span-2,.span-3,.span-5{grid-column:span 6}}
+  @media(max-width:650px){.vs-wrap{padding:12px}.span-2,.span-3,.span-5{grid-column:span 12}}
+
+  .field label{display:block;margin-bottom:7px;font-size:12px;font-weight:900;color:#334155;text-transform:uppercase;letter-spacing:.06em}
+  .field input,.field select{
+    width:100%;height:46px;border:1px solid #dbe2ea;border-radius:16px;
+    padding:0 14px;font-weight:750;outline:none;background:white;color:#0f172a;
+  }
+  .field input:focus,.field select:focus{border-color:#38bdf8;box-shadow:0 0 0 4px rgba(14,165,233,.12)}
+
+  .kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:18px}
+  @media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:650px){.kpi-grid{grid-template-columns:1fr}}
+  .kpi{
+    background:white;border-radius:24px;border:1px solid #e2e8f0;padding:18px;
+    box-shadow:0 14px 40px rgba(15,23,42,.06);
+  }
+  .kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:950}
+  .kpi-value{margin-top:9px;font-size:26px;line-height:1;font-weight:950;color:#0f172a}
+  .kpi-green{color:#047857}.kpi-red{color:#b91c1c}.kpi-blue{color:#1d4ed8}.kpi-indigo{color:#4f46e5}
+
+  .table-wrap{overflow:auto;max-height:620px}
+  .table-wrap::-webkit-scrollbar{width:8px;height:8px}
+  .table-wrap::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px}
+  table{width:100%;min-width:1320px;border-collapse:collapse}
+  thead{background:#f8fafc;position:sticky;top:0;z-index:10}
+  th{padding:15px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:950;white-space:nowrap}
+  td{padding:14px;border-top:1px solid #edf2f7;vertical-align:middle;font-size:13px}
+  tr:hover{background:#fafcff}
+
+  .strong{font-weight:950;color:#0f172a}
+  .muted{color:#64748b;font-size:12px;font-weight:700}
+  .num{font-weight:900;white-space:nowrap}
+  .green{color:#047857}.red{color:#b91c1c}.indigo{color:#4f46e5}
+
+  .badge{
+    display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;
+    font-size:11px;font-weight:950;border:1px solid transparent;white-space:nowrap;
+  }
+  .badge-green{background:#dcfce7;color:#166534;border-color:#bbf7d0}
+  .badge-red{background:#fee2e2;color:#991b1b;border-color:#fecaca}
+  .badge-blue{background:#dbeafe;color:#1d4ed8;border-color:#bfdbfe}
+  .badge-purple{background:#ede9fe;color:#6d28d9;border-color:#ddd6fe}
+  .badge-slate{background:#e2e8f0;color:#334155;border-color:#cbd5e1}
+
+  .empty{padding:42px;text-align:center;color:#64748b;font-weight:800}
+</style>
+
+<div class="vs-wrap">
+
+  <div class="vs-head">
+    <div>
+      <div class="vs-title">Kárdex PRO</div>
+      <div class="vs-sub">Historial valorizado por material, almacén, fechas, entradas, salidas y saldo acumulado.</div>
     </div>
 
-    <div class="p-5">
-      {{-- Filtros --}}
-      <form method="GET" action="{{ route('inventario.kardex.ver') }}">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+<div class="vs-actions">
 
-          {{-- Material --}}
-          <div class="lg:col-span-8 space-y-1">
-            <div class="text-sm font-extrabold text-slate-800">Material</div>
-            <select
-              name="material_id"
-              required
-              class="w-full h-11 rounded-xl bg-white border border-slate-200/70 shadow-sm
-                     focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300
-                     text-sm font-semibold text-slate-900 px-3"
-            >
+  <a href="{{ route('inventario.movimientos') }}" class="btn btn-light">
+    {!! $kIcon('traslado') !!}
+    Movimientos
+  </a>
+
+  @if($materialSel && $almacenSel)
+
+    <a
+      href="{{ route('inventario.kardex.pdf', [
+        'material_id' => $materialSel,
+        'almacen_id'  => $almacenSel,
+        'desde'       => $desde,
+        'hasta'       => $hasta,
+      ]) }}"
+      target="_blank"
+      class="btn btn-primary"
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 17V3"/>
+        <path d="m6 11 6 6 6-6"/>
+        <path d="M19 21H5"/>
+      </svg>
+
+      Exportar PDF
+    </a>
+
+  @endif
+
+</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Filtros de consulta</div>
+        <div class="panel-sub">Selecciona el material, almacén y rango de fechas.</div>
+      </div>
+    </div>
+
+    <div class="panel-body">
+      <form method="GET" action="{{ route('inventario.kardex.ver') }}">
+        <div class="grid">
+          <div class="field span-5">
+            <label>Material</label>
+            <select name="material_id" required>
               @foreach($materiales as $m)
                 <option value="{{ $m->id }}" @selected(($materialSel ?? '')==$m->id)>
                   {{ $m->sku }} — {{ $m->descripcion }}
@@ -71,16 +170,9 @@
             </select>
           </div>
 
-          {{-- Almacén --}}
-          <div class="lg:col-span-4 space-y-1">
-            <div class="text-sm font-extrabold text-slate-800">Almacén</div>
-            <select
-              name="almacen_id"
-              required
-              class="w-full h-11 rounded-xl bg-white border border-slate-200/70 shadow-sm
-                     focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300
-                     text-sm font-semibold text-slate-900 px-3"
-            >
+          <div class="field span-3">
+            <label>Almacén</label>
+            <select name="almacen_id" required>
               @foreach($almacenes as $a)
                 <option value="{{ $a->id }}" @selected(($almacenSel ?? '')==$a->id)>
                   {{ $a->nombre }}
@@ -89,106 +181,134 @@
             </select>
           </div>
 
+          <div class="field span-2">
+            <label>Desde</label>
+            <input type="date" name="desde" value="{{ $desde ?? '' }}">
+          </div>
+
+          <div class="field span-2">
+            <label>Hasta</label>
+            <input type="date" name="hasta" value="{{ $hasta ?? '' }}">
+          </div>
         </div>
 
-        <div class="mt-4 flex justify-end">
-          <button
-            class="inline-flex items-center gap-2 rounded-xl px-4 h-11 text-sm font-extrabold
-                   bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm"
-            type="submit"
-          >
-            {{-- icon: magnifying --}}
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-              <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-4.35-4.35m1.35-5.4a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"/>
-            </svg>
-            Ver Kárdex
+        <div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:18px">
+          <a href="{{ route('inventario.kardex') }}" class="btn btn-light">Limpiar</a>
+          <button class="btn btn-primary" type="submit">
+            Consultar Kárdex
           </button>
         </div>
       </form>
     </div>
   </div>
 
-  {{-- KPIs --}}
   @if($totales)
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="bg-white border rounded-2xl p-5 shadow-sm">
-        <div class="text-xs font-extrabold text-slate-500 uppercase">Entradas</div>
-        <div class="mt-2 text-2xl font-black text-slate-900">
-          {{ number_format((float)$totales['entradas'], 0) }}
-        </div>
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">Entradas</div>
+        <div class="kpi-value kpi-green">{{ number_format((float)$totales['entradas_cantidad'], 2) }}</div>
       </div>
 
-      <div class="bg-white border rounded-2xl p-5 shadow-sm">
-        <div class="text-xs font-extrabold text-slate-500 uppercase">Salidas</div>
-        <div class="mt-2 text-2xl font-black text-slate-900">
-          {{ number_format((float)$totales['salidas'], 0) }}
-        </div>
+      <div class="kpi">
+        <div class="kpi-label">Salidas</div>
+        <div class="kpi-value kpi-red">{{ number_format((float)$totales['salidas_cantidad'], 2) }}</div>
       </div>
 
-      <div class="bg-white border rounded-2xl p-5 shadow-sm">
-        <div class="text-xs font-extrabold text-slate-500 uppercase">Saldo</div>
-        <div class="mt-2 text-2xl font-black text-slate-900">
-          {{ number_format((float)$totales['saldo'], 2) }}
-        </div>
+      <div class="kpi">
+        <div class="kpi-label">Saldo</div>
+        <div class="kpi-value">{{ number_format((float)$totales['saldo_cantidad'], 2) }}</div>
+      </div>
+
+      <div class="kpi">
+        <div class="kpi-label">Valor entradas</div>
+        <div class="kpi-value kpi-green">${{ number_format((float)$totales['entradas_valor'], 2) }}</div>
+      </div>
+
+      <div class="kpi">
+        <div class="kpi-label">Saldo valorizado</div>
+        <div class="kpi-value kpi-indigo">${{ number_format((float)$totales['saldo_valor'], 2) }}</div>
       </div>
     </div>
   @endif
 
-  {{-- Tabla --}}
-  <div class="bg-white border rounded-2xl shadow-sm overflow-hidden">
-    <div class="overflow-auto">
-      <table class="min-w-[860px] w-full">
-        <thead class="bg-slate-50">
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Detalle de movimientos</div>
+        <div class="panel-sub">
+          @if($totales)
+            {{ $totales['material'] ?? 'Material' }} · {{ $totales['almacen'] ?? 'Almacén' }}
+          @else
+            Selecciona filtros para visualizar el historial.
+          @endif
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
           <tr>
-            <th class="px-4 py-3 text-xs font-extrabold text-slate-600">Fecha</th>
-            <th class="px-4 py-3 text-xs font-extrabold text-slate-600">Tipo</th>
-            <th class="px-4 py-3 text-xs font-extrabold text-slate-600">Entrada</th>
-            <th class="px-4 py-3 text-xs font-extrabold text-slate-600">Salida</th>
-            <th class="px-4 py-3 text-xs font-extrabold text-slate-600">Saldo</th>
-            <th class="px-4 py-3 text-xs font-extrabold text-slate-600">Referencia</th>
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>Entrada</th>
+            <th>Salida</th>
+            <th>Saldo</th>
+            <th>Referencia</th>
+            <th>Detalle</th>
+            <th>Costo U.</th>
+            <th>Valor</th>
+            <th>Saldo $</th>
           </tr>
         </thead>
 
-        <tbody class="divide-y">
+        <tbody>
           @forelse($rows as $r)
             @php
               $tipo = (string)($r['tipo'] ?? '');
               $pill = $pillClass($tipo);
+              $valorMov = (float)($r['entrada_valor'] ?: $r['salida_valor']);
             @endphp
 
-            <tr class="hover:bg-slate-50/60">
-              <td class="px-4 py-3 text-sm font-semibold text-slate-800 whitespace-nowrap">
-                {{ $r['fecha'] }}
-              </td>
+            <tr>
+              <td class="num">{{ $r['fecha'] }}</td>
 
-              {{-- ✅ Tipo con color + icono kraya --}}
-              <td class="px-4 py-3">
-                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-extrabold border {{ $pill }}">
+              <td>
+                <span class="badge {{ $pill }}">
                   {!! $kIcon($tipo) !!}
-                  {{ strtoupper($tipo) }}
+                  {{ strtoupper($tipo ?: 'MOV') }}
                 </span>
               </td>
 
-              <td class="px-4 py-3 text-sm font-semibold text-slate-800">
-                {{ $r['entrada'] ? number_format((float)$r['entrada'], 0) : '—' }}
+              <td class="num green">
+                {{ $r['entrada_cantidad'] ? number_format((float)$r['entrada_cantidad'], 2) : '—' }}
               </td>
 
-              <td class="px-4 py-3 text-sm font-semibold text-slate-800">
-                {{ $r['salida'] ? number_format((float)$r['salida'], 0) : '—' }}
+              <td class="num red">
+                {{ $r['salida_cantidad'] ? number_format((float)$r['salida_cantidad'], 2) : '—' }}
               </td>
 
-              <td class="px-4 py-3 text-sm font-black text-slate-900">
-                {{ number_format((float)$r['saldo'], 2) }}
+              <td class="num">{{ number_format((float)$r['saldo_cantidad'], 2) }}</td>
+
+              <td class="muted">{{ $r['referencia'] ?: '—' }}</td>
+
+              <td>
+                <div class="strong">{{ $r['detalle'] ?: 'Movimiento de inventario' }}</div>
+                <div class="muted">
+                  {{ $r['almacen_origen'] ?: '—' }} → {{ $r['almacen_destino'] ?: '—' }}
+                </div>
               </td>
 
-              <td class="px-4 py-3 text-sm font-semibold text-slate-500">
-                {{ $r['ref'] ?: '—' }}
-              </td>
+              <td class="num">${{ number_format((float)$r['costo_unitario'], 2) }}</td>
+
+              <td class="num">${{ number_format($valorMov, 2) }}</td>
+
+              <td class="num indigo">${{ number_format((float)$r['saldo_valor'], 2) }}</td>
             </tr>
           @empty
             <tr>
-              <td colspan="6" class="px-4 py-5 text-sm text-slate-500">
-                Selecciona material y almacén para ver movimientos.
+              <td colspan="10">
+                <div class="empty">Selecciona material y almacén para visualizar el Kárdex.</div>
               </td>
             </tr>
           @endforelse

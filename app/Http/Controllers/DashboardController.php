@@ -11,6 +11,7 @@ use App\Models\Material;
 use App\Models\Proyecto;
 use App\Models\ProyectoCosto;
 use App\Models\ProyectoTarea;
+use App\Models\User;
 use App\Support\EmpresaScope;
 use Illuminate\Support\Facades\Schema;
 
@@ -24,7 +25,7 @@ class DashboardController extends Controller
 
         if ($user) {
             if (method_exists($user, 'hasRole')) {
-                $isSuperAdmin = $user->hasRole('SuperAdmin');
+                $isSuperAdmin = $user->hasRole('SuperAdmin') || $user->hasRole('Super Admin');
             } elseif (isset($user->is_superadmin)) {
                 $isSuperAdmin = (bool) $user->is_superadmin;
             }
@@ -206,6 +207,20 @@ class DashboardController extends Controller
 
         /*
         |--------------------------------------------------------------------------
+        | EQUIPO ACTIVO
+        |--------------------------------------------------------------------------
+        */
+$equipoActivo = User::query()
+    ->where('empresa_id', $empresaId)
+    ->whereDoesntHave('roles', function ($q) {
+        $q->whereIn('name', ['SuperAdmin', 'Super Admin']);
+    })
+    ->latest('id')
+    ->limit(4)
+    ->get();
+
+        /*
+        |--------------------------------------------------------------------------
         | KPI FINAL
         |--------------------------------------------------------------------------
         */
@@ -240,6 +255,7 @@ class DashboardController extends Controller
             'topMateriales'      => $topMateriales,
             'proyectosRecientes' => $proyectosRecientes,
             'tareasRecientes'    => $tareasRecientes,
+            'equipoActivo'       => $equipoActivo,
         ]);
     }
 
@@ -274,6 +290,7 @@ class DashboardController extends Controller
             'topMateriales'      => collect(),
             'proyectosRecientes' => collect(),
             'tareasRecientes'    => collect(),
+            'equipoActivo'       => collect(),
         ];
     }
 }

@@ -6,25 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Models\Almacen;
 use App\Models\InvMovimiento;
 use App\Models\Material;
-use Illuminate\Http\Request;
-
-// ✅ Import del scope (super admin selecciona empresa)
 use App\Support\EmpresaScope;
+use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\Empresa;
 
 class KardexController extends Controller
 {
-    /**
-     * ✅ EMPRESA ACTUAL (PATRÓN PARA COPIAR)
-     * - SuperAdmin: EmpresaScope::getId() (sesión)
-     * - Usuario normal: auth()->user()->empresa_id
-     * - Si no hay empresa -> abort 403
-     */
     private function empresaIdOrAbort(): int
     {
         $user = auth()->user();
 
-        $scopeEmpresaId = (int) EmpresaScope::getId();          // super admin (sesión)
-        $userEmpresaId  = (int) ($user->empresa_id ?? 0);       // usuario normal
+        $scopeEmpresaId = (int) EmpresaScope::getId();
+        $userEmpresaId  = (int) ($user->empresa_id ?? 0);
 
         $empresaId = $scopeEmpresaId > 0 ? $scopeEmpresaId : $userEmpresaId;
 
@@ -35,114 +29,133 @@ class KardexController extends Controller
         return $empresaId;
     }
 
-    /**
-     * Muestra formulario (material + almacén).
-     */
     public function index(Request $req)
     {
-        // ✅ FIX: ya NO usamos solo auth()->user()->empresa_id
-        // porque SuperAdmin no tiene empresa asignada (0) y trabaja con EmpresaScope.
         $empresaId = $this->empresaIdOrAbort();
 
-        $materiales = Material::where('empresa_id', $empresaId)
-            ->orderBy('descripcion')
-            ->get();
-
-        $almacenes = Almacen::where('empresa_id', $empresaId)
-            ->orderBy('nombre')
-            ->get();
-
         return view('inventario.kardex.index', [
-            'materiales'  => $materiales,
-            'almacenes'   => $almacenes,
+            'materiales'  => Material::where('empresa_id', $empresaId)->orderBy('descripcion')->get(),
+            'almacenes'   => Almacen::where('empresa_id', $empresaId)->orderBy('nombre')->get(),
             'materialSel' => $req->query('material_id'),
             'almacenSel'  => $req->query('almacen_id'),
-            'rows'        => [],
+            'desde'       => $req->query('desde'),
+            'hasta'       => $req->query('hasta'),
+            'rows'        => collect(),
             'totales'     => null,
         ]);
     }
 
-    /**
-     * Genera el kardex.
-     */
     public function kardexVer(Request $req)
     {
-        // ✅ FIX: empresa por scope/usuario
         $empresaId = $this->empresaIdOrAbort();
 
-        // Validación base
         $data = $req->validate([
             'material_id' => ['required', 'integer'],
             'almacen_id'  => ['required', 'integer'],
+            'desde'       => ['nullable', 'date'],
+            'hasta'       => ['nullable', 'date'],
         ]);
 
         $materialId = (int) $data['material_id'];
         $almacenId  = (int) $data['almacen_id'];
+        $desde      = $data['desde'] ?? null;
+        $hasta      = $data['hasta'] ?? null;
 
-        /**
-         * ✅ Seguridad multiempresa:
-         * - Material SOLO de esta empresa
-         * - Almacén SOLO de esta empresa
-         */
         $material = Material::where('empresa_id', $empresaId)
             ->where('id', $materialId)
             ->firstOrFail();
 
-        Almacen::where('empresa_id', $empresaId)
+        $almacen = Almacen::where('empresa_id', $empresaId)
             ->where('id', $almacenId)
             ->firstOrFail();
 
-        /**
-         * Movimientos SOLO de esta empresa + material + almacén involucrado
-         */
-        $movs = InvMovimiento::where('empresa_id', $empresaId)
+        $query = InvMovimiento::where('empresa_id', $empresaId)
             ->where('material_id', $material->id)
             ->where(function ($q) use ($almacenId) {
                 $q->where('almacen_origen_id', $almacenId)
                   ->orWhere('almacen_destino_id', $almacenId);
-            })
+            });
+
+        if ($desde) {
+            $query->whereDate('fecha', '>=', $desde);
+        }
+
+        if ($hasta) {
+            $query->whereDate('fecha', '<=', $hasta);
+        }
+
+        $movs = $query
+            ->with(['material', 'almacenOrigen', 'almacenDestino'])
             ->orderBy('fecha')
             ->orderBy('id')
             ->get();
 
-        $rows = [];
+        $rows = collect();
 
-        // Entradas/Salidas enteras
-        $saldo    = 0.0;  // saldo con decimales (2)
-        $entradas = 0;    // entero
-        $salidas  = 0;    // entero
+        $saldoCantidad = 0.0;
+        $saldoValor = 0.0;
+
+        $entradasCantidad = 0.0;
+        $salidasCantidad = 0.0;
+        $entradasValor = 0.0;
+        $salidasValor = 0.0;
 
         foreach ($movs as $m) {
             $entra = ((int) $m->almacen_destino_id === $almacenId);
             $sale  = ((int) $m->almacen_origen_id === $almacenId);
 
-            // cantidad como ENTERO (sin decimales)
-            $cant = (int) round((float) $m->cantidad, 0);
+            $cantidad = round((float) $m->cantidad, 4);
+            $costoUnitario = round((float) ($m->costo_unitario ?? 0), 4);
+            $valor = round($cantidad * $costoUnitario, 4);
 
-            $entrada = $entra ? $cant : 0;
-            $salida  = $sale  ? $cant : 0;
+            $entradaCantidad = $entra ? $cantidad : 0;
+            $salidaCantidad  = $sale ? $cantidad : 0;
 
-            // saldo en 2 decimales (aunque entrada/salida sea entero)
-            $saldo = round($saldo + $entrada - $salida, 2);
+            $entradaValor = $entra ? $valor : 0;
+            $salidaValor  = $sale ? $valor : 0;
 
-            $entradas += $entrada;
-            $salidas  += $salida;
+            $saldoCantidad = round($saldoCantidad + $entradaCantidad - $salidaCantidad, 4);
+            $saldoValor = round($saldoValor + $entradaValor - $salidaValor, 4);
 
-            $rows[] = [
-                'fecha'   => (string) $m->fecha,
-                'tipo'    => (string) $m->tipo,
-                'entrada' => $entrada,
-                'salida'  => $salida,
-                'saldo'   => $saldo,
-                'ref'     => (string) ($m->referencia ?? ''),
-            ];
+            $entradasCantidad += $entradaCantidad;
+            $salidasCantidad += $salidaCantidad;
+            $entradasValor += $entradaValor;
+            $salidasValor += $salidaValor;
+
+            $meta = [];
+            if (!empty($m->meta)) {
+                $decoded = json_decode($m->meta, true);
+                $meta = is_array($decoded) ? $decoded : [];
+            }
+
+            $rows->push([
+                'fecha'             => $m->fecha,
+                'tipo'              => (string) $m->tipo,
+                'referencia'        => (string) ($m->referencia ?? ''),
+                'detalle'           => $meta['descripcion'] ?? $meta['origen'] ?? '',
+                'almacen_origen'    => $m->almacenOrigen->nombre ?? null,
+                'almacen_destino'   => $m->almacenDestino->nombre ?? null,
+
+                'entrada_cantidad'  => $entradaCantidad,
+                'salida_cantidad'   => $salidaCantidad,
+                'saldo_cantidad'    => $saldoCantidad,
+
+                'costo_unitario'    => $costoUnitario,
+                'entrada_valor'     => $entradaValor,
+                'salida_valor'      => $salidaValor,
+                'saldo_valor'       => $saldoValor,
+            ]);
         }
 
         $totales = [
-            'entradas' => (int) $entradas,
-            'salidas'  => (int) $salidas,
-            'saldo'    => round((float) $saldo, 2),
-            'material' => $material->descripcion,
+            'material'          => $material->descripcion,
+            'almacen'           => $almacen->nombre,
+            'entradas_cantidad' => round($entradasCantidad, 4),
+            'salidas_cantidad'  => round($salidasCantidad, 4),
+            'saldo_cantidad'    => round($saldoCantidad, 4),
+            'entradas_valor'    => round($entradasValor, 2),
+            'salidas_valor'     => round($salidasValor, 2),
+            'saldo_valor'       => round($saldoValor, 2),
         ];
 
         return view('inventario.kardex.index', [
@@ -150,8 +163,107 @@ class KardexController extends Controller
             'almacenes'   => Almacen::where('empresa_id', $empresaId)->orderBy('nombre')->get(),
             'materialSel' => $material->id,
             'almacenSel'  => $almacenId,
+            'desde'       => $desde,
+            'hasta'       => $hasta,
             'rows'        => $rows,
             'totales'     => $totales,
         ]);
     }
+    public function pdf(Request $req)
+{
+    $empresaId = $this->empresaIdOrAbort();
+
+    $data = $req->validate([
+        'material_id' => ['required', 'integer'],
+        'almacen_id'  => ['required', 'integer'],
+        'desde'       => ['nullable', 'date'],
+        'hasta'       => ['nullable', 'date'],
+    ]);
+
+    $materialId = (int) $data['material_id'];
+    $almacenId  = (int) $data['almacen_id'];
+
+    $desde = $data['desde'] ?? null;
+    $hasta = $data['hasta'] ?? null;
+
+    $material = Material::where('empresa_id', $empresaId)
+        ->where('id', $materialId)
+        ->firstOrFail();
+
+    $almacen = Almacen::where('empresa_id', $empresaId)
+        ->where('id', $almacenId)
+        ->firstOrFail();
+
+    $empresa = Empresa::find($empresaId);
+
+    $query = InvMovimiento::where('empresa_id', $empresaId)
+        ->where('material_id', $materialId)
+        ->where(function ($q) use ($almacenId) {
+            $q->where('almacen_origen_id', $almacenId)
+              ->orWhere('almacen_destino_id', $almacenId);
+        });
+
+    if ($desde) {
+        $query->whereDate('fecha', '>=', $desde);
+    }
+
+    if ($hasta) {
+        $query->whereDate('fecha', '<=', $hasta);
+    }
+
+    $movs = $query
+        ->with(['almacenOrigen', 'almacenDestino'])
+        ->orderBy('fecha')
+        ->orderBy('id')
+        ->get();
+
+    $rows = [];
+
+    $saldoCantidad = 0;
+    $saldoValor = 0;
+
+    foreach ($movs as $m) {
+
+        $entra = ((int)$m->almacen_destino_id === $almacenId);
+        $sale  = ((int)$m->almacen_origen_id === $almacenId);
+
+        $cantidad = (float)$m->cantidad;
+        $costo = (float)($m->costo_unitario ?? 0);
+        $valor = $cantidad * $costo;
+
+        $entrada = $entra ? $cantidad : 0;
+        $salida  = $sale ? $cantidad : 0;
+
+        $entradaValor = $entra ? $valor : 0;
+        $salidaValor  = $sale ? $valor : 0;
+
+        $saldoCantidad += ($entrada - $salida);
+        $saldoValor += ($entradaValor - $salidaValor);
+
+        $rows[] = [
+            'fecha' => $m->fecha,
+            'tipo' => $m->tipo,
+            'referencia' => $m->referencia,
+            'entrada' => $entrada,
+            'salida' => $salida,
+            'saldo' => $saldoCantidad,
+            'costo' => $costo,
+            'valor' => $valor,
+            'saldo_valor' => $saldoValor,
+        ];
+    }
+
+    $pdf = Pdf::loadView('inventario.kardex.pdf', [
+        'empresa' => $empresa,
+        'material' => $material,
+        'almacen' => $almacen,
+        'rows' => $rows,
+        'desde' => $desde,
+        'hasta' => $hasta,
+    ])->setPaper('a4', 'landscape');
+
+    return $pdf->stream(
+        'kardex_'.$material->sku.'.pdf'
+    );
+}
 }

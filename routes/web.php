@@ -29,6 +29,8 @@ use App\Http\Controllers\Admin\ProyectoCostoController;
 use App\Http\Controllers\Admin\CuentaPorPagarController;
 use App\Http\Controllers\Admin\CuentaPorCobrarController;
 use App\Http\Controllers\Admin\IngresoController;
+use App\Http\Controllers\Admin\ProveedorController;
+use App\Http\Controllers\Admin\OrdenCompraController;
 
 /*
 |--------------------------------------------------------------------------
@@ -241,12 +243,57 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | PROYECTOS / FINANZAS
+    | PROYECTOS / FINANZAS / COMPRAS
     |--------------------------------------------------------------------------
     */
     Route::prefix('admin')
         ->name('admin.')
         ->group(function () {
+
+            /*
+            |--------------------------------------------------------------------------
+            | PROVEEDORES
+            |--------------------------------------------------------------------------
+            */
+            Route::get('proveedores', [ProveedorController::class, 'index'])
+                ->name('proveedores.index');
+
+            Route::post('proveedores', [ProveedorController::class, 'store'])
+                ->name('proveedores.store');
+
+            Route::put('proveedores/{proveedore}', [ProveedorController::class, 'update'])
+                ->name('proveedores.update');
+
+            Route::post('proveedores/{proveedore}/toggle', [ProveedorController::class, 'toggle'])
+                ->name('proveedores.toggle');
+
+                Route::get('ordenes-compra', [OrdenCompraController::class, 'index'])
+    ->middleware('permission:ordenes_compra.ver')
+    ->name('ordenes_compra.index');
+
+Route::get('ordenes-compra/create', [OrdenCompraController::class, 'create'])
+    ->middleware('permission:ordenes_compra.crear')
+    ->name('ordenes_compra.create');
+
+Route::post('ordenes-compra', [OrdenCompraController::class, 'store'])
+    ->middleware('permission:ordenes_compra.crear')
+    ->name('ordenes_compra.store');
+
+Route::get('ordenes-compra/{ordenCompra}', [OrdenCompraController::class, 'show'])
+    ->middleware('permission:ordenes_compra.ver')
+    ->name('ordenes_compra.show');
+
+Route::post('ordenes-compra/{ordenCompra}/aprobar', [OrdenCompraController::class, 'aprobar'])
+    ->middleware('permission:ordenes_compra.aprobar')
+    ->name('ordenes_compra.aprobar');
+
+Route::post('ordenes-compra/{ordenCompra}/cancelar', [OrdenCompraController::class, 'cancelar'])
+    ->middleware('permission:ordenes_compra.cancelar')
+    ->name('ordenes_compra.cancelar');
+
+    Route::post('ordenes-compra/{ordenCompra}/recibir', [OrdenCompraController::class, 'recibir'])
+    ->middleware('permission:ordenes_compra.recibir')
+    ->name('ordenes_compra.recibir');
 
             /*
             |--------------------------------------------------------------------------
@@ -482,6 +529,10 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
                 ->middleware('permission:materiales.ver')
                 ->name('materiales');
 
+                Route::get('materiales/pdf', [MaterialController::class, 'pdf'])
+    ->middleware('permission:materiales.ver')
+    ->name('materiales.pdf');
+
             Route::get('materiales/create', [MaterialController::class, 'create'])
                 ->middleware('permission:materiales.crear')
                 ->name('materiales.create');
@@ -509,6 +560,10 @@ Route::prefix('app')->middleware(['auth'])->group(function () {
             Route::get('kardex/ver', [KardexController::class, 'kardexVer'])
                 ->middleware('permission:kardex.ver')
                 ->name('kardex.ver');
+                
+                Route::get('kardex/pdf', [KardexController::class, 'pdf'])
+    ->middleware('permission:kardex.ver')
+    ->name('kardex.pdf');
 
             Route::get('movimientos', [MovimientosController::class, 'index'])
                 ->middleware('permission:inventario.ver')
