@@ -57,8 +57,7 @@ class CuentaPorPagarController extends Controller
                 $q->where('empresa_id', $empresaId);
             })
             ->latest('id')
-->paginate(10)
-->withQueryString();
+            ->get();
 
         return view('admin.cuentas.index', compact('cuentas'));
     }

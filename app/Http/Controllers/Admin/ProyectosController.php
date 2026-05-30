@@ -41,19 +41,43 @@ class ProyectosController extends Controller
     /**
      * LISTADO
      */
-    public function index()
-    {
-        $empresaId = $this->empresaIdOrAbort();
+   public function index(Request $request)
+{
+    $empresaId = $this->empresaIdOrAbort();
 
-        $proyectos = Proyecto::with('responsable')
-            ->where('empresa_id', $empresaId)
-            ->latest()
-            ->paginate(15)
-            ->withQueryString();
+    $q = trim((string) $request->get('q', ''));
+    $estado = trim((string) $request->get('estado', ''));
 
-        return view('admin.proyectos.index', compact('proyectos'));
+    $baseQuery = Proyecto::with('responsable')
+        ->where('empresa_id', $empresaId);
+
+    if ($q !== '') {
+        $baseQuery->where(function ($qq) use ($q) {
+            $qq->where('codigo', 'like', "%{$q}%")
+               ->orWhere('nombre', 'like', "%{$q}%")
+               ->orWhere('ubicacion', 'like', "%{$q}%")
+               ->orWhere('descripcion', 'like', "%{$q}%");
+        });
     }
 
+    if ($estado !== '') {
+        $baseQuery->where('estado', $estado);
+    }
+
+    $proyectosResumen = (clone $baseQuery)->get();
+
+    $proyectos = $baseQuery
+        ->latest('id')
+        ->paginate(15)
+        ->withQueryString();
+
+    return view('admin.proyectos.index', compact(
+        'proyectos',
+        'proyectosResumen',
+        'q',
+        'estado'
+    ));
+}
     /**
      * CREAR
      */

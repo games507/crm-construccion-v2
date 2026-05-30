@@ -6,12 +6,12 @@
   $estado = (string)($proyecto->estado ?? '');
   $estadoLabel = $estado ? ucfirst(str_replace('_', ' ', $estado)) : '—';
 
-  $badge = match($estado) {
-    'planeado'     => 'bg-slate-100 text-slate-700 border-slate-200',
-    'en_ejecucion' => 'bg-indigo-50 text-indigo-700 border-indigo-200',
-    'pausado'      => 'bg-amber-50 text-amber-700 border-amber-200',
-    'finalizado'   => 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    default        => 'bg-slate-100 text-slate-700 border-slate-200',
+  $badgeEstado = match($estado) {
+    'planeado'     => 'vs-badge-slate',
+    'en_ejecucion' => 'vs-badge-indigo',
+    'pausado'      => 'vs-badge-warn',
+    'finalizado'   => 'vs-badge-ok',
+    default        => 'vs-badge-slate',
   };
 
   $responsableNombre = $proyecto->responsable->name
@@ -62,605 +62,704 @@
   $tiposCosto = \App\Models\ProyectoCosto::tipos();
   $costosLista = $costos ?? collect();
 
-  $iconTasks = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg>';
-  $iconPending = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6v6l4 2"/></svg>';
-  $iconProcess = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 3v3m0 12v3m9-9h-3M6 12H3"/></svg>';
-  $iconDone = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="m5 13 4 4L19 7"/></svg>';
-  $iconPaused = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10 6v12M14 6v12"/></svg>';
-  $iconPhase = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M3 7.5A2.5 2.5 0 0 1 5.5 5H10l2 2h6.5A2.5 2.5 0 0 1 21 9.5v7"/></svg>';
-  $iconState = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="9"/></svg>';
-  $iconCode = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m8 9-3 3 3 3m8-6 3 3-3 3"/></svg>';
-  $iconUser = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6.75a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 19.5a7.5 7.5 0 0 1 15 0"/></svg>';
-  $iconMap = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="m9 19-6 2V5l6-2 6 2 6-2v16l-6 2-6-2Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M9 3v16m6-14v16"/></svg>';
-  $iconCalendar = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 3v3m8-3v3M4 9h16M5.25 5.25h13.5A1.75 1.75 0 0 1 20.5 7v11.75a1.75 1.75 0 0 1-1.75 1.75H5.25A1.75 1.75 0 0 1 3.5 18.75V7a1.75 1.75 0 0 1 1.75-1.75Z"/></svg>';
+  $icon = function($name){
+    if($name==='back') return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    if($name==='edit') return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 20h4l10-10-4-4L4 16v4Z" stroke="currentColor" stroke-width="2"/></svg>';
+    if($name==='plus') return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+    if($name==='trash') return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 6h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M8 6V4h8v2" stroke="currentColor" stroke-width="2"/><path d="M6 6l1 14h10l1-14" stroke="currentColor" stroke-width="2"/></svg>';
+    if($name==='code') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="m8 9-3 3 3 3m8-6 3 3-3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    if($name==='user') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M4 21a8 8 0 0 1 16 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+    if($name==='map') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="m9 19-6 2V5l6-2 6 2 6-2v16l-6 2-6-2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 3v16m6-14v16" stroke="currentColor" stroke-width="2"/></svg>';
+    if($name==='calendar') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M8 3v3m8-3v3M4 9h16M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+    return '';
+  };
 @endphp
 
-<div class="space-y-6">
+<style>
+.vs-wrap{max-width:1450px;margin:0 auto;padding:18px}
+.vs-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.vs-title{font-size:30px;font-weight:950;color:#0f172a;line-height:1}
+.vs-sub{margin-top:7px;font-size:13px;color:#64748b;font-weight:700}
+.vs-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 
-  <div class="flex flex-wrap items-start justify-between gap-3">
+.vs-btn{height:40px;border:none;border-radius:16px;padding:0 18px;display:inline-flex;align-items:center;justify-content:center;gap:10px;font-weight:900;text-decoration:none;cursor:pointer;transition:.2s ease}
+.vs-btn:hover{transform:translateY(-2px)}
+.vs-btn-primary{background:linear-gradient(135deg,#0f172a,#0b4f7d);color:white;box-shadow:0 12px 30px rgba(15,23,42,.15)}
+.vs-btn-primary:hover{color:white}
+.vs-btn-light{background:#f1f5f9;color:#334155;border:1px solid #e2e8f0}
+.vs-btn-light:hover{background:#e2e8f0;color:#334155}
+.vs-btn-green{background:#059669;color:white;box-shadow:0 12px 30px rgba(5,150,105,.15)}
+.vs-btn-green:hover{color:white}
+.vs-btn-danger{background:#e11d48;color:white;box-shadow:0 12px 30px rgba(225,29,72,.15)}
+.vs-btn-danger:hover{color:white}
+
+.vs-card{background:white;border-radius:28px;border:1px solid #e2e8f0;box-shadow:0 18px 50px rgba(15,23,42,.07);overflow:hidden}
+.vs-card-head{padding:18px;border-bottom:1px solid #e2e8f0;display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.vs-card-title{font-weight:950;color:#0f172a;font-size:16px}
+.vs-card-sub{font-size:12px;color:#64748b;margin-top:4px;font-weight:700}
+.vs-card-body{padding:18px}
+
+.vs-grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.vs-grid-2{display:grid;grid-template-columns:2fr 1fr;gap:18px}
+@media(max-width:1100px){.vs-grid-3,.vs-grid-2{grid-template-columns:1fr}}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.kpi-grid{grid-template-columns:1fr}}
+
+.kpi{background:white;border-radius:24px;border:1px solid #e2e8f0;padding:16px;box-shadow:0 14px 40px rgba(15,23,42,.06)}
+.kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:950}
+.kpi-value{margin-top:10px;font-size:24px;font-weight:950;color:#0f172a}
+
+.vs-badge{display:inline-flex;align-items:center;padding:7px 12px;border-radius:999px;font-size:11px;font-weight:950;border:1px solid transparent}
+.vs-badge-slate{background:#f1f5f9;color:#334155;border-color:#e2e8f0}
+.vs-badge-indigo{background:#eef2ff;color:#4338ca;border-color:#c7d2fe}
+.vs-badge-warn{background:#fef3c7;color:#92400e;border-color:#fde68a}
+.vs-badge-ok{background:#dcfce7;color:#166534;border-color:#bbf7d0}
+.vs-badge-danger{background:#fee2e2;color:#991b1b;border-color:#fecaca}
+
+.info-row{display:flex;gap:12px;align-items:flex-start}
+.info-icon{height:38px;width:38px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;color:#64748b;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.info-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:950}
+.info-value{margin-top:3px;color:#0f172a;font-weight:900;font-size:13px}
+
+.input-vs,.select-vs,.textarea-vs{width:100%;border:1px solid #dbe2ea;border-radius:16px;padding:0 14px;font-weight:700;outline:none;background:white;color:#0f172a}
+.input-vs,.select-vs{height:40px}
+.textarea-vs{padding-top:12px;padding-bottom:12px;min-height:90px;resize:vertical}
+.input-vs:focus,.select-vs:focus,.textarea-vs:focus{border-color:#38bdf8;box-shadow:0 0 0 4px rgba(14,165,233,.12)}
+.form-mini{border:1px solid #e2e8f0;background:#f8fafc;border-radius:22px;padding:16px;margin-top:14px}
+
+.item-card{border:1px solid #e2e8f0;background:white;border-radius:22px;padding:16px;margin-bottom:14px}
+.item-card:last-child{margin-bottom:0}
+.action-btn{height:32px;width:32px;border-radius:12px;border:1px solid #e2e8f0;background:white;display:inline-flex;align-items:center;justify-content:center;color:#64748b;transition:.2s ease}
+.action-btn:hover{background:#f8fafc;transform:translateY(-1px)}
+
+.soft-box{border-radius:20px;border:1px solid #e2e8f0;background:#f8fafc;padding:14px}
+.progress-bg{width:100%;background:#e2e8f0;border-radius:999px;overflow:hidden}
+</style>
+
+<div class="vs-wrap" x-data="{ tab:'resumen' }">
+  <div class="vs-head">
     <div>
-      <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">
-        {{ $proyecto->nombre }}
-      </h1>
-      <p class="text-sm text-slate-500 mt-1">
-        Panel general del proyecto
-      </p>
+      <div class="vs-title">{{ $proyecto->nombre }}</div>
+      <div class="vs-sub">Panel ejecutivo del proyecto, costos, fases, tareas y cuentas por pagar.</div>
     </div>
 
-    <div class="flex items-center gap-2">
-      <a href="{{ route('admin.proyectos') }}"
-         class="inline-flex items-center justify-center rounded-xl px-4 h-11 text-sm font-semibold bg-white border border-slate-900/10 hover:border-slate-900/20 shadow-sm">
-        Volver
+    <div class="vs-actions">
+      <span class="vs-badge {{ $badgeEstado }}">{{ $estadoLabel }}</span>
+
+      <a href="{{ route('admin.proyectos') }}" class="vs-btn vs-btn-light">
+        {!! $icon('back') !!} Volver
       </a>
 
       @can('proyectos.editar')
-        <a href="{{ route('admin.proyectos.edit', $proyecto->id) }}"
-           class="inline-flex items-center justify-center rounded-xl px-4 h-11 text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
-          Editar
+        <a href="{{ route('admin.proyectos.edit', $proyecto->id) }}" class="vs-btn vs-btn-primary">
+          {!! $icon('edit') !!} Editar
         </a>
       @endcan
     </div>
   </div>
 
   @if (session('ok'))
-    <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800">
-      ✅ {{ session('ok') }}
+    <div class="mb-4 rounded-3xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-800 font-black">
+      {{ session('ok') }}
     </div>
   @endif
 
   @if ($errors->any())
-    <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-800">
-      ❌ {{ $errors->first() }}
+    <div class="mb-4 rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-red-800 font-black">
+      {{ $errors->first() }}
     </div>
   @endif
+<div class="mb-5">
 
-  <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+  <div class="vs-card p-2">
 
-    <div class="xl:col-span-2 rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
-      <div class="flex justify-between items-center gap-3">
-        <h2 class="font-bold text-slate-700">Avance del Proyecto</h2>
-        <span class="font-extrabold {{ $avanceText }}">
-          {{ number_format($avance, 2, '.', ',') }}%
-        </span>
-      </div>
+    <div class="flex flex-wrap gap-2">
 
-      <div class="mt-3 w-full bg-slate-200 rounded-full h-4 overflow-hidden shadow-inner">
-        <div class="bg-gradient-to-r {{ $avanceColor }} h-4 rounded-full transition-all duration-500 ease-out"
-             style="width: {{ $avance }}%;">
+      @php
+        $tabs = [
+          'resumen' => 'Resumen',
+          'costos'  => 'Costos',
+          'cxp'     => 'Cuentas por pagar',
+          'fases'   => 'Fases',
+          'tareas'  => 'Tareas',
+        ];
+      @endphp
+
+      @foreach($tabs as $key => $label)
+        <button
+          type="button"
+          @click="tab='{{ $key }}'"
+          :class="tab==='{{ $key }}'
+            ? 'bg-slate-900 text-white shadow-lg'
+            : 'bg-white text-slate-600 border border-slate-200'"
+          class="h-11 px-5 rounded-2xl text-sm font-black transition-all duration-200"
+        >
+          {{ $label }}
+        </button>
+      @endforeach
+
+    </div>
+
+  </div>
+
+</div>
+
+<div x-show="tab==='resumen'" x-transition>
+  <div class="vs-grid-2 mb-4">
+
+    <div class="vs-card">
+      <div class="vs-card-head">
+        <div>
+          <div class="vs-card-title">Avance del proyecto</div>
+          <div class="vs-card-sub">Resumen de avance operativo y estado general.</div>
+        </div>
+
+        <div class="text-right">
+          <div class="text-[11px] uppercase tracking-wide text-slate-500 font-black">Avance</div>
+          <div class="text-2xl font-black {{ $avanceText }}">
+            {{ number_format($avance, 2, '.', ',') }}%
+          </div>
         </div>
       </div>
 
-      <div class="mt-5 grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
-          <div class="text-[10px] uppercase text-slate-500">Tareas</div>
-          <div class="text-lg font-extrabold text-slate-900 mt-1">{{ $stats['tareas_total'] }}</div>
+      <div class="vs-card-body">
+        <div class="progress-bg h-4 shadow-inner">
+          <div class="bg-gradient-to-r {{ $avanceColor }} h-4 rounded-full transition-all duration-500 ease-out"
+               style="width: {{ $avance }}%;"></div>
         </div>
 
-        <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
-          <div class="text-[10px] uppercase text-slate-500">Fases</div>
-          <div class="text-lg font-extrabold text-slate-900 mt-1">{{ $stats['fases_total'] }}</div>
+        <div class="mt-5 kpi-grid">
+          <div class="soft-box">
+            <div class="kpi-label">Tareas</div>
+            <div class="kpi-value">{{ $stats['tareas_total'] }}</div>
+          </div>
+
+          <div class="soft-box">
+            <div class="kpi-label">Fases</div>
+            <div class="kpi-value">{{ $stats['fases_total'] }}</div>
+          </div>
+
+          <div class="soft-box">
+            <div class="kpi-label">Fases OK</div>
+            <div class="kpi-value text-emerald-700">{{ $stats['fases_completadas'] }}</div>
+          </div>
+
+          <div class="soft-box">
+            <div class="kpi-label">Finalizadas</div>
+            <div class="kpi-value text-emerald-700">{{ $stats['tareas_finalizadas'] }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="vs-card">
+      <div class="vs-card-head">
+        <div>
+          <div class="vs-card-title">Información general</div>
+          <div class="vs-card-sub">Datos principales del proyecto.</div>
+        </div>
+      </div>
+
+      <div class="vs-card-body space-y-4">
+        <div class="info-row">
+          <div class="info-icon">{!! $icon('code') !!}</div>
+          <div>
+            <div class="info-label">Código</div>
+            <div class="info-value">{{ $proyecto->codigo ?? '—' }}</div>
+          </div>
         </div>
 
-        <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-          <div class="text-[10px] uppercase text-emerald-700">Fases OK</div>
-          <div class="text-lg font-extrabold text-emerald-800 mt-1">{{ $stats['fases_completadas'] }}</div>
+        <div class="info-row">
+          <div class="info-icon">{!! $icon('user') !!}</div>
+          <div>
+            <div class="info-label">Responsable</div>
+            <div class="info-value">{{ $responsableNombre }}</div>
+          </div>
         </div>
 
-        <div class="rounded-xl border border-slate-200 bg-white p-3">
-          <div class="text-[10px] uppercase text-slate-500">Estado</div>
-          <div class="mt-2">
-            <span class="inline-flex items-center rounded-full px-2 py-1 text-[10px] font-bold border {{ $badge }}">
-              {{ $estadoLabel }}
+        <div class="info-row">
+          <div class="info-icon">{!! $icon('map') !!}</div>
+          <div>
+            <div class="info-label">Ubicación</div>
+            <div class="info-value">{{ $proyecto->ubicacion ?? '—' }}</div>
+          </div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-icon">{!! $icon('calendar') !!}</div>
+          <div>
+            <div class="info-label">Fechas</div>
+            <div class="info-value">{{ $fi }} / {{ $ff }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="vs-grid-2 mb-4">
+
+    <div class="vs-card">
+      <div class="vs-card-head">
+        <div>
+          <div class="vs-card-title">Control de costos</div>
+          <div class="vs-card-sub">Resumen financiero del proyecto.</div>
+        </div>
+
+        <div class="text-right">
+          <div class="text-[11px] uppercase tracking-wide text-slate-500 font-black">% consumido</div>
+          <div class="text-2xl font-black {{ $consumoText }}">
+            {{ number_format($porcentajeConsumido, 2, '.', ',') }}%
+          </div>
+        </div>
+      </div>
+
+      <div class="vs-card-body">
+        <div class="kpi-grid">
+          <div class="soft-box">
+            <div class="kpi-label">Presupuesto</div>
+            <div class="kpi-value">$ {{ number_format($presupuesto, 2, '.', ',') }}</div>
+          </div>
+
+          <div class="soft-box">
+            <div class="kpi-label">Ejecutado</div>
+            <div class="kpi-value text-sky-700">$ {{ number_format($ejecutado, 2, '.', ',') }}</div>
+          </div>
+
+          <div class="soft-box">
+            <div class="kpi-label">Disponible</div>
+            <div class="kpi-value {{ $saldoDisponible < 0 ? 'text-rose-700' : 'text-emerald-700' }}">
+              $ {{ number_format($saldoDisponible, 2, '.', ',') }}
+            </div>
+          </div>
+
+          <div class="soft-box">
+            <div class="kpi-label">Registros</div>
+            <div class="kpi-value text-indigo-700">{{ $costosLista->count() }}</div>
+          </div>
+        </div>
+
+        <div class="mt-5">
+          <div class="flex justify-between items-center gap-3 mb-2">
+            <span class="text-sm font-black text-slate-600">Consumo del presupuesto</span>
+            <span class="text-sm font-black {{ $consumoText }}">
+              {{ number_format($porcentajeConsumido, 2, '.', ',') }}%
             </span>
           </div>
-        </div>
-      </div>
-    </div>
 
-    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
-      <h2 class="text-base font-extrabold text-slate-900 mb-4">Información general</h2>
-
-      <div class="space-y-4 text-sm">
-        <div class="flex items-start gap-3">
-          <div class="text-slate-500 mt-0.5">{!! $iconCode !!}</div>
-          <div>
-            <div class="text-slate-500 font-semibold">Código</div>
-            <div class="text-slate-900 font-semibold">{{ $proyecto->codigo ?? '—' }}</div>
-          </div>
-        </div>
-
-        <div class="flex items-start gap-3">
-          <div class="text-slate-500 mt-0.5">{!! $iconUser !!}</div>
-          <div>
-            <div class="text-slate-500 font-semibold">Responsable</div>
-            <div class="text-slate-900 font-semibold">{{ $responsableNombre }}</div>
-          </div>
-        </div>
-
-        <div class="flex items-start gap-3">
-          <div class="text-slate-500 mt-0.5">{!! $iconMap !!}</div>
-          <div>
-            <div class="text-slate-500 font-semibold">Ubicación</div>
-            <div class="text-slate-900 font-semibold">{{ $proyecto->ubicacion ?? '—' }}</div>
-          </div>
-        </div>
-
-        <div class="flex items-start gap-3">
-          <div class="text-slate-500 mt-0.5">{!! $iconCalendar !!}</div>
-          <div>
-            <div class="text-slate-500 font-semibold">Fechas</div>
-            <div class="text-slate-900 font-semibold">{{ $fi }} / {{ $ff }}</div>
+          <div class="progress-bg h-4 shadow-inner">
+            <div class="bg-gradient-to-r {{ $consumoColor }} h-4 rounded-full transition-all duration-500 ease-out"
+                 style="width: {{ min($porcentajeConsumido, 100) }}%;"></div>
           </div>
         </div>
       </div>
     </div>
 
-  </div>
-
-  <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
-
-    <div class="xl:col-span-2 rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
-      <div class="flex flex-wrap items-start justify-between gap-3">
+    <div class="vs-card">
+      <div class="vs-card-head">
         <div>
-          <h2 class="text-base font-extrabold text-slate-900">Control de Costos</h2>
-          <p class="text-sm text-slate-500 mt-1">Resumen financiero del proyecto</p>
-        </div>
-        <div class="text-right">
-          <div class="text-xs uppercase tracking-wide text-slate-500 font-semibold">% consumido</div>
-          <div class="text-lg font-extrabold {{ $consumoText }}">
-            {{ number_format($porcentajeConsumido, 2, '.', ',') }}%
-          </div>
+          <div class="vs-card-title">Descripción</div>
+          <div class="vs-card-sub">Detalle general del proyecto.</div>
         </div>
       </div>
 
-      <div class="mt-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <div class="text-xs uppercase tracking-wide text-slate-500 font-semibold">Presupuesto</div>
-          <div class="mt-2 text-xl font-extrabold text-slate-900">
-            $ {{ number_format($presupuesto, 2, '.', ',') }}
-          </div>
+      <div class="vs-card-body">
+        <div class="text-sm leading-7 text-slate-700 font-semibold">
+          {{ $proyecto->descripcion ?: 'Sin descripción registrada.' }}
         </div>
-
-        <div class="rounded-2xl border border-sky-200 bg-sky-50 p-4">
-          <div class="text-xs uppercase tracking-wide text-sky-700 font-semibold">Ejecutado</div>
-          <div class="mt-2 text-xl font-extrabold text-sky-800">
-            $ {{ number_format($ejecutado, 2, '.', ',') }}
-          </div>
-        </div>
-
-        <div class="rounded-2xl border {{ $saldoDisponible < 0 ? 'border-rose-200 bg-rose-50' : 'border-emerald-200 bg-emerald-50' }} p-4">
-          <div class="text-xs uppercase tracking-wide {{ $saldoDisponible < 0 ? 'text-rose-700' : 'text-emerald-700' }} font-semibold">
-            Disponible
-          </div>
-          <div class="mt-2 text-xl font-extrabold {{ $saldoDisponible < 0 ? 'text-rose-800' : 'text-emerald-800' }}">
-            $ {{ number_format($saldoDisponible, 2, '.', ',') }}
-          </div>
-        </div>
-
-        <div class="rounded-2xl border border-indigo-200 bg-indigo-50 p-4">
-          <div class="text-xs uppercase tracking-wide text-indigo-700 font-semibold">Registros</div>
-          <div class="mt-2 text-xl font-extrabold text-indigo-800">
-            {{ $costosLista->count() }}
-          </div>
-        </div>
-      </div>
-
-      <div class="mt-4">
-        <div class="flex justify-between items-center gap-3 mb-2">
-          <span class="text-sm font-semibold text-slate-600">Consumo del presupuesto</span>
-          <span class="text-sm font-extrabold {{ $consumoText }}">
-            {{ number_format($porcentajeConsumido, 2, '.', ',') }}%
-          </span>
-        </div>
-
-        <div class="w-full bg-slate-200 rounded-full h-4 overflow-hidden shadow-inner">
-          <div class="bg-gradient-to-r {{ $consumoColor }} h-4 rounded-full transition-all duration-500 ease-out"
-               style="width: {{ min($porcentajeConsumido, 100) }}%;">
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
-      <h2 class="text-base font-extrabold text-slate-900 mb-3">Descripción</h2>
-      <div class="text-sm leading-6 text-slate-700">
-        {{ $proyecto->descripcion ?: 'Sin descripción registrada.' }}
       </div>
     </div>
 
   </div>
+</div>
 
-  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+<div x-show="tab==='costos'" x-transition>
+  <div class="vs-card mb-4">
+    <div class="vs-card-head">
       <div>
-        <h2 class="text-base font-extrabold text-slate-900">Costos del Proyecto</h2>
-        <p class="text-sm text-slate-500 mt-1">Listado y registro de costos</p>
+        <div class="vs-card-title">Costos del proyecto</div>
+        <div class="vs-card-sub">Listado y registro de costos.</div>
       </div>
 
       <details class="group">
-        <summary class="list-none cursor-pointer inline-flex items-center justify-center rounded-xl px-4 h-11 text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
-          + Agregar costo
+        <summary class="list-none cursor-pointer vs-btn vs-btn-primary">
+          {!! $icon('plus') !!} Agregar costo
         </summary>
 
-        <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <div class="form-mini">
           <form method="POST" action="{{ route('admin.proyectos.costos.store') }}">
             @csrf
             <input type="hidden" name="proyecto_id" value="{{ $proyecto->id }}">
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-              <select name="tipo" class="h-11 rounded-xl border border-slate-300 px-3">
+              <select name="tipo" class="select-vs">
                 <option value="">Tipo de costo</option>
                 @foreach($tiposCosto as $key => $label)
                   <option value="{{ $key }}" @selected(old('tipo') == $key)>{{ $label }}</option>
                 @endforeach
               </select>
 
-              <input type="text" name="categoria" value="{{ old('categoria') }}" placeholder="Categoría"
-                class="h-11 rounded-xl border border-slate-300 px-3">
+              <input type="text" name="categoria" value="{{ old('categoria') }}" placeholder="Categoría" class="input-vs">
+              <input type="text" name="proveedor" value="{{ old('proveedor') }}" placeholder="Proveedor / acreedor" class="input-vs">
+              <input type="number" step="0.01" name="monto" value="{{ old('monto') }}" placeholder="Monto" class="input-vs">
+              <input type="date" name="fecha" value="{{ old('fecha') }}" class="input-vs">
 
-              <input type="text" name="proveedor" value="{{ old('proveedor') }}" placeholder="Proveedor / acreedor"
-                class="h-11 rounded-xl border border-slate-300 px-3">
-
-              <input type="number" step="0.01" name="monto" value="{{ old('monto') }}" placeholder="Monto"
-                class="h-11 rounded-xl border border-slate-300 px-3">
-
-              <input type="date" name="fecha" value="{{ old('fecha') }}" class="h-11 rounded-xl border border-slate-300 px-3">
-
-              <select name="estado_pago" class="h-11 rounded-xl border border-slate-300 px-3">
+              <select name="estado_pago" class="select-vs">
                 <option value="pendiente" @selected(old('estado_pago') == 'pendiente')>Pendiente</option>
                 <option value="parcial" @selected(old('estado_pago') == 'parcial')>Parcial</option>
                 <option value="pagado" @selected(old('estado_pago') == 'pagado')>Pagado</option>
               </select>
 
-              <label class="h-11 rounded-xl border border-slate-300 px-3 flex items-center gap-2 text-sm text-slate-700 bg-white">
+              <label class="h-10 rounded-2xl border border-slate-200 px-3 flex items-center gap-2 text-sm text-slate-700 bg-white font-bold">
                 <input type="checkbox" name="requiere_pago" value="1" class="rounded border-slate-300" @checked(old('requiere_pago'))>
                 Requiere pago
               </label>
 
-              <button class="bg-indigo-600 text-white rounded-xl h-11 font-semibold px-4">
-                Guardar costo
-              </button>
+              <button class="vs-btn vs-btn-primary">Guardar costo</button>
             </div>
 
             <div class="mt-3">
-              <textarea name="descripcion" rows="3" placeholder="Descripción del costo"
-                class="w-full rounded-xl border border-slate-300 px-3 py-3">{{ old('descripcion') }}</textarea>
+              <textarea name="descripcion" rows="3" placeholder="Descripción del costo" class="textarea-vs">{{ old('descripcion') }}</textarea>
             </div>
           </form>
         </div>
       </details>
     </div>
 
-    @forelse($costosLista as $costo)
-      @php
-        $estadoPago = (string) ($costo->estado_pago ?? 'pendiente');
+    <div class="vs-card-body">
+      @forelse($costosLista as $costo)
+        @php
+          $estadoPago = (string) ($costo->estado_pago ?? 'pendiente');
 
-        $badgePago = match($estadoPago) {
-          'pagado'    => 'bg-emerald-50 text-emerald-700 border-emerald-200',
-          'parcial'   => 'bg-amber-50 text-amber-700 border-amber-200',
-          default     => 'bg-rose-50 text-rose-700 border-rose-200',
-        };
+          $badgePago = match($estadoPago) {
+            'pagado'    => 'vs-badge-ok',
+            'parcial'   => 'vs-badge-warn',
+            default     => 'vs-badge-danger',
+          };
 
-        $tipoLabel = $tiposCosto[$costo->tipo] ?? ucfirst(str_replace('_', ' ', (string) $costo->tipo));
-      @endphp
+          $tipoLabel = $tiposCosto[$costo->tipo] ?? ucfirst(str_replace('_', ' ', (string) $costo->tipo));
+        @endphp
 
-      <div class="border border-slate-200 rounded-2xl p-4 mb-4 last:mb-0">
-        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
-          <div class="min-w-0">
-            <div class="font-bold text-slate-900">{{ $tipoLabel }}</div>
+        <div class="item-card">
+          <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+            <div class="min-w-0">
+              <div class="font-black text-slate-900">{{ $tipoLabel }}</div>
 
-            <div class="mt-2 flex flex-wrap gap-2">
-              @if(!empty($costo->categoria))
-                <span class="inline-flex items-center rounded-full bg-slate-100 text-slate-700 px-3 py-1 text-xs font-bold border border-slate-200">
-                  {{ $costo->categoria }}
-                </span>
-              @endif
+              <div class="mt-2 flex flex-wrap gap-2">
+                @if(!empty($costo->categoria))
+                  <span class="vs-badge vs-badge-slate">{{ $costo->categoria }}</span>
+                @endif
 
-              <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-bold border {{ $badgePago }}">
-                {{ ucfirst($estadoPago) }}
-              </span>
+                <span class="vs-badge {{ $badgePago }}">{{ ucfirst($estadoPago) }}</span>
 
-              @if((bool) ($costo->requiere_pago ?? false))
-                <span class="inline-flex items-center rounded-full bg-indigo-50 text-indigo-700 px-3 py-1 text-xs font-bold border border-indigo-200">
-                  Requiere pago
-                </span>
-              @endif
-            </div>
-
-            <div class="text-sm text-slate-500 mt-2">
-              Proveedor: {{ $costo->proveedor ?: '—' }} · Fecha: {{ $costo->fecha?->format('Y-m-d') ?? '—' }}
-            </div>
-
-            @if(!empty($costo->descripcion))
-              <div class="mt-3 text-sm text-slate-600">
-                {{ $costo->descripcion }}
+                @if((bool) ($costo->requiere_pago ?? false))
+                  <span class="vs-badge vs-badge-indigo">Requiere pago</span>
+                @endif
               </div>
-            @endif
-          </div>
 
-          <div class="text-right">
-            <div class="text-xs uppercase tracking-wide text-slate-500 font-semibold">Monto</div>
-            <div class="text-lg font-extrabold text-slate-900">
-              $ {{ number_format((float) $costo->monto, 2, '.', ',') }}
+              <div class="text-sm text-slate-500 mt-2 font-bold">
+                Proveedor: {{ $costo->proveedor ?: '—' }} · Fecha: {{ $costo->fecha?->format('Y-m-d') ?? '—' }}
+              </div>
+
+              @if(!empty($costo->descripcion))
+                <div class="mt-3 text-sm text-slate-600">{{ $costo->descripcion }}</div>
+              @endif
             </div>
 
-            <div class="mt-3 flex items-center justify-end gap-2">
-              <a href="{{ route('admin.proyectos.costos.edit', $costo->id) }}"
-                 title="Editar costo"
-                 class="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-slate-900/10 bg-white text-slate-600 hover:text-indigo-700 hover:border-indigo-200 hover:bg-indigo-50 transition shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
-                     fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M16.862 4.487a2.25 2.25 0 1 1 3.182 3.182L7.5 20.213 3 21l.787-4.5L16.862 4.487Z"/>
-                </svg>
-              </a>
+            <div class="text-right">
+              <div class="kpi-label">Monto</div>
+              <div class="text-lg font-black text-slate-900">
+                $ {{ number_format((float) $costo->monto, 2, '.', ',') }}
+              </div>
 
-              <form method="POST"
-                    action="{{ route('admin.proyectos.costos.destroy', $costo->id) }}"
-                    onsubmit="return confirm('¿Seguro que deseas eliminar este costo?');"
-                    class="inline-flex">
-                @csrf
-                @method('DELETE')
+              <div class="mt-3 flex items-center justify-end gap-2">
+                <a href="{{ route('admin.proyectos.costos.edit', $costo->id) }}" title="Editar costo" class="action-btn hover:text-indigo-600">
+                  {!! $icon('edit') !!}
+                </a>
 
-                <button type="submit"
-                        title="Eliminar costo"
-                        class="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-slate-900/10 bg-white text-slate-600 hover:text-rose-700 hover:border-rose-200 hover:bg-rose-50 transition shadow-sm">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
-                       fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                          d="M6 7.5h12m-10.5 0V6a1.5 1.5 0 0 1 1.5-1.5h6A1.5 1.5 0 0 1 16.5 6v1.5m-9 0v10.125A2.625 2.625 0 0 0 10.125 20.25h3.75A2.625 2.625 0 0 0 16.5 17.625V7.5M10 10.5v6m4-6v6"/>
-                  </svg>
-                </button>
-              </form>
+                <form method="POST" action="{{ route('admin.proyectos.costos.destroy', $costo->id) }}" onsubmit="return confirm('¿Seguro que deseas eliminar este costo?');" class="inline-flex">
+                  @csrf
+                  @method('DELETE')
+
+                  <button type="submit" title="Eliminar costo" class="action-btn hover:text-rose-600">
+                    {!! $icon('trash') !!}
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-       @empty
-      <div class="text-sm text-slate-500">No hay costos registrados aún.</div>
-    @endforelse
+      @empty
+        <div class="text-sm text-slate-500 font-bold">No hay costos registrados aún.</div>
+      @endforelse
+    </div>
   </div>
+</div>
 
-  {{-- CUENTAS POR PAGAR --}}
-  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+<div x-show="tab==='cxp'" x-transition>
+  <div class="vs-card mb-4">
+    <div class="vs-card-head">
       <div>
-        <h2 class="text-base font-extrabold text-slate-900">Cuentas por pagar</h2>
-        <p class="text-sm text-slate-500 mt-1">Control de saldos pendientes del proyecto</p>
+        <div class="vs-card-title">Cuentas por pagar</div>
+        <div class="vs-card-sub">Control de saldos pendientes del proyecto.</div>
       </div>
 
       <details class="group">
-        <summary class="list-none cursor-pointer inline-flex items-center justify-center rounded-xl px-4 h-11 text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
-          + Agregar cuenta
+        <summary class="list-none cursor-pointer vs-btn vs-btn-primary">
+          {!! $icon('plus') !!} Agregar cuenta
         </summary>
 
-        <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <div class="form-mini">
           <form method="POST" action="{{ route('admin.cuentas.store') }}">
             @csrf
             <input type="hidden" name="proyecto_id" value="{{ $proyecto->id }}">
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-              <input type="text" name="proveedor" placeholder="Proveedor / acreedor"
-                class="h-11 rounded-xl border border-slate-300 px-3" required>
+              <input type="text" name="proveedor" placeholder="Proveedor / acreedor" class="input-vs" required>
+              <input type="number" step="0.01" name="monto_total" placeholder="Monto total" class="input-vs" required>
+              <input type="date" name="fecha" class="input-vs">
+              <input type="date" name="fecha_vencimiento" class="input-vs">
 
-              <input type="number" step="0.01" name="monto_total" placeholder="Monto total"
-                class="h-11 rounded-xl border border-slate-300 px-3" required>
+              <textarea name="descripcion" rows="3" placeholder="Descripción" class="textarea-vs lg:col-span-3"></textarea>
 
-              <input type="date" name="fecha"
-                class="h-11 rounded-xl border border-slate-300 px-3">
-
-              <input type="date" name="fecha_vencimiento"
-                class="h-11 rounded-xl border border-slate-300 px-3">
-
-              <textarea name="descripcion" rows="3" placeholder="Descripción"
-                class="lg:col-span-3 w-full rounded-xl border border-slate-300 px-3 py-3"></textarea>
-
-              <button class="bg-indigo-600 text-white rounded-xl h-11 font-semibold px-4">
-                Guardar cuenta
-              </button>
+              <button class="vs-btn vs-btn-primary">Guardar cuenta</button>
             </div>
           </form>
         </div>
       </details>
     </div>
 
-    @forelse(($proyecto->cuentasPorPagar ?? collect()) as $c)
-      @php
-        $estadoCxP = (string)($c->estado ?? 'pendiente');
+    <div class="vs-card-body">
+      @forelse(($proyecto->cuentasPorPagar ?? collect()) as $c)
+        @php
+          $estadoCxP = (string)($c->estado ?? 'pendiente');
 
-        $badgeCxP = match($estadoCxP) {
-          'pagado'  => 'bg-emerald-50 text-emerald-700 border-emerald-200',
-          'parcial' => 'bg-amber-50 text-amber-700 border-amber-200',
-          default   => 'bg-rose-50 text-rose-700 border-rose-200',
-        };
-      @endphp
+          $badgeCxP = match($estadoCxP) {
+            'pagado'  => 'vs-badge-ok',
+            'parcial' => 'vs-badge-warn',
+            default   => 'vs-badge-danger',
+          };
+        @endphp
 
-      <div class="border border-slate-200 rounded-2xl p-4 mb-4 last:mb-0">
-        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
-          <div class="min-w-0">
-            <div class="font-bold text-slate-900">{{ $c->proveedor }}</div>
+        <div class="item-card">
+          <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+            <div class="min-w-0">
+              <div class="font-black text-slate-900">{{ $c->proveedor }}</div>
 
-            <div class="mt-2 flex flex-wrap gap-2">
-              <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-bold border {{ $badgeCxP }}">
-                {{ ucfirst($estadoCxP) }}
-              </span>
-            </div>
-
-            <div class="text-sm text-slate-500 mt-2">
-              Registro: {{ $c->fecha?->format('Y-m-d') ?? '—' }} · Vence: {{ $c->fecha_vencimiento?->format('Y-m-d') ?? '—' }}
-            </div>
-
-            @if(!empty($c->descripcion))
-              <div class="mt-3 text-sm text-slate-600">
-                {{ $c->descripcion }}
+              <div class="mt-2">
+                <span class="vs-badge {{ $badgeCxP }}">{{ ucfirst($estadoCxP) }}</span>
               </div>
-            @endif
+
+              <div class="text-sm text-slate-500 mt-2 font-bold">
+                Registro: {{ $c->fecha?->format('Y-m-d') ?? '—' }} · Vence: {{ $c->fecha_vencimiento?->format('Y-m-d') ?? '—' }}
+              </div>
+
+              @if(!empty($c->descripcion))
+                <div class="mt-3 text-sm text-slate-600">{{ $c->descripcion }}</div>
+              @endif
+            </div>
+
+            <div class="text-right min-w-[180px]">
+              <div class="kpi-label">Saldo</div>
+              <div class="text-lg font-black text-rose-700">
+                $ {{ number_format((float)$c->saldo, 2, '.', ',') }}
+              </div>
+
+              <div class="mt-2 text-xs text-slate-500 font-bold">
+                Total: $ {{ number_format((float)$c->monto_total, 2, '.', ',') }}
+              </div>
+              <div class="text-xs text-slate-500 font-bold">
+                Pagado: $ {{ number_format((float)$c->monto_pagado, 2, '.', ',') }}
+              </div>
+            </div>
           </div>
 
-          <div class="text-right min-w-[180px]">
-            <div class="text-xs uppercase tracking-wide text-slate-500 font-semibold">Saldo</div>
-            <div class="text-lg font-extrabold text-rose-700">
-              $ {{ number_format((float)$c->saldo, 2, '.', ',') }}
-            </div>
-
-            <div class="mt-2 text-xs text-slate-500">
-              Total: $ {{ number_format((float)$c->monto_total, 2, '.', ',') }}
-            </div>
-            <div class="text-xs text-slate-500">
-              Pagado: $ {{ number_format((float)$c->monto_pagado, 2, '.', ',') }}
-            </div>
-          </div>
+          <form method="POST" action="{{ route('admin.cuentas.pagar', $c->id) }}" class="mt-4 flex flex-col sm:flex-row gap-2">
+            @csrf
+            <input type="number" step="0.01" name="monto" placeholder="Monto pago" class="input-vs sm:max-w-[180px]">
+            <button class="vs-btn vs-btn-green">Registrar pago</button>
+          </form>
         </div>
-
-        <form method="POST" action="{{ route('admin.cuentas.pagar', $c->id) }}" class="mt-4 flex flex-col sm:flex-row gap-2">
-          @csrf
-          <input type="number" step="0.01" name="monto" placeholder="Monto pago"
-                 class="h-10 rounded-xl border border-slate-300 px-3">
-          <button class="inline-flex items-center justify-center h-10 px-4 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 shadow-sm">
-            Registrar pago
-          </button>
-        </form>
-      </div>
-    @empty
-      <div class="text-sm text-slate-500">No hay cuentas por pagar.</div>
-    @endforelse
+      @empty
+        <div class="text-sm text-slate-500 font-bold">No hay cuentas por pagar.</div>
+      @endforelse
+    </div>
   </div>
+</div>
 
-  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+<div x-show="tab==='fases'" x-transition>
+  <div class="vs-card mb-4">
+    <div class="vs-card-head">
       <div>
-        <h2 class="text-base font-extrabold text-slate-900">Fases del Proyecto</h2>
-        <p class="text-sm text-slate-500 mt-1">Control por etapas</p>
+        <div class="vs-card-title">Fases del proyecto</div>
+        <div class="vs-card-sub">Control por etapas.</div>
       </div>
 
       <details class="group">
-        <summary class="list-none cursor-pointer inline-flex items-center justify-center rounded-xl px-4 h-11 text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
-          + Agregar fase
+        <summary class="list-none cursor-pointer vs-btn vs-btn-primary">
+          {!! $icon('plus') !!} Agregar fase
         </summary>
 
-        <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <div class="form-mini">
           <form method="POST" action="{{ route('admin.proyectos.fases.store') }}">
             @csrf
             <input type="hidden" name="proyecto_id" value="{{ $proyecto->id }}">
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <input type="text" name="nombre" placeholder="Nombre de la fase"
-                class="h-11 rounded-xl border border-slate-300 px-3">
-
-              <input type="number" name="orden" placeholder="Orden"
-                class="h-11 rounded-xl border border-slate-300 px-3">
-
-              <input type="number" step="0.01" name="porcentaje" placeholder="%"
-                class="h-11 rounded-xl border border-slate-300 px-3">
-
-              <button class="bg-indigo-600 text-white rounded-xl h-11 font-semibold px-4">
-                Guardar fase
-              </button>
+              <input type="text" name="nombre" placeholder="Nombre de la fase" class="input-vs">
+              <input type="text" inputmode="numeric" name="orden" placeholder="Orden" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="input-vs">
+              <input type="text" inputmode="decimal" name="porcentaje" placeholder="%" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" class="input-vs">
+              <button class="vs-btn vs-btn-primary">Guardar fase</button>
             </div>
           </form>
         </div>
       </details>
     </div>
 
-    @forelse($proyecto->fases as $fase)
-      @php
-        $porcentaje = max(0, min(100, (float)($fase->porcentaje ?? 0)));
+    <div class="vs-card-body">
+      @forelse($proyecto->fases as $fase)
+        @php
+          $porcentaje = max(0, min(100, (float)($fase->porcentaje ?? 0)));
 
-        $faseColor = match(true) {
-          $porcentaje >= 100 => 'from-emerald-500 to-emerald-600',
-          $porcentaje >= 70  => 'from-green-500 to-green-600',
-          $porcentaje >= 31  => 'from-amber-500 to-amber-600',
-          $porcentaje > 0    => 'from-rose-500 to-rose-600',
-          default            => 'from-slate-400 to-slate-500',
-        };
+          $faseColor = match(true) {
+            $porcentaje >= 100 => 'from-emerald-500 to-emerald-600',
+            $porcentaje >= 70  => 'from-green-500 to-green-600',
+            $porcentaje >= 31  => 'from-amber-500 to-amber-600',
+            $porcentaje > 0    => 'from-rose-500 to-rose-600',
+            default            => 'from-slate-400 to-slate-500',
+          };
 
-        $faseText = match(true) {
-          $porcentaje >= 100 => 'text-emerald-700',
-          $porcentaje >= 70  => 'text-green-700',
-          $porcentaje >= 31  => 'text-amber-700',
-          $porcentaje > 0    => 'text-rose-700',
-          default            => 'text-slate-500',
-        };
-      @endphp
+          $faseText = match(true) {
+            $porcentaje >= 100 => 'text-emerald-700',
+            $porcentaje >= 70  => 'text-green-700',
+            $porcentaje >= 31  => 'text-amber-700',
+            $porcentaje > 0    => 'text-rose-700',
+            default            => 'text-slate-500',
+          };
+        @endphp
 
-      <div class="mb-5 last:mb-0">
-        <div class="flex items-center justify-between gap-3">
-          <div>
-            <div class="font-semibold text-slate-900">{{ $fase->nombre }}</div>
-            <div class="text-xs text-slate-500">Orden: {{ $fase->orden ?? 0 }}</div>
+        <div class="item-card">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <div class="font-black text-slate-900">{{ $fase->nombre }}</div>
+              <div class="text-xs text-slate-500 font-bold">Orden: {{ $fase->orden ?? 0 }}</div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <div class="text-sm font-black {{ $faseText }}">
+                {{ number_format($porcentaje, 2, '.', ',') }}%
+              </div>
+
+              <details class="relative group">
+                <summary title="Editar fase" class="list-none cursor-pointer action-btn hover:text-indigo-600">
+                  {!! $icon('edit') !!}
+                </summary>
+
+                <div class="absolute right-0 z-30 mt-2 w-[320px] rounded-2xl border border-slate-200 bg-white p-4 shadow-xl">
+                  <form method="POST" action="{{ route('admin.proyectos.fases.update', $fase->id) }}" class="space-y-3">
+                    @csrf
+                    @method('PUT')
+
+                    <div>
+                      <label class="text-xs font-bold text-slate-500">Nombre</label>
+                      <input type="text" name="nombre" value="{{ $fase->nombre }}" class="mt-1 input-vs" required>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                      <div>
+                        <label class="text-xs font-bold text-slate-500">Orden</label>
+                        <input type="text" inputmode="numeric" name="orden" value="{{ $fase->orden ?? 0 }}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="mt-1 input-vs">
+                      </div>
+
+                      <div>
+                        <label class="text-xs font-bold text-slate-500">%</label>
+                        <input type="text" inputmode="decimal" name="porcentaje" value="{{ number_format($porcentaje, 2, '.', '') }}" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" class="mt-1 input-vs">
+                      </div>
+                    </div>
+
+                    <div class="flex justify-end gap-2 pt-1">
+                      <button type="submit" class="vs-btn vs-btn-primary">Guardar</button>
+                    </div>
+                  </form>
+                </div>
+              </details>
+
+              <form method="POST" action="{{ route('admin.proyectos.fases.destroy', $fase->id) }}" onsubmit="return confirm('¿Seguro que deseas eliminar esta fase? Las tareas quedarán sin fase.');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" title="Eliminar fase" class="action-btn hover:text-rose-600">
+                  {!! $icon('trash') !!}
+                </button>
+              </form>
+            </div>
           </div>
-          <div class="text-sm font-extrabold {{ $faseText }}">
-            {{ number_format($porcentaje, 2, '.', ',') }}%
+
+          <div class="mt-3 progress-bg h-3 shadow-inner">
+            <div class="h-3 rounded-full bg-gradient-to-r {{ $faseColor }} transition-all duration-500 ease-out"
+                 style="width: {{ $porcentaje }}%;"></div>
           </div>
         </div>
-
-        <div class="mt-2 w-full h-3 rounded-full bg-slate-200 overflow-hidden shadow-inner">
-          <div class="h-3 rounded-full bg-gradient-to-r {{ $faseColor }} transition-all duration-500 ease-out"
-               style="width: {{ $porcentaje }}%;">
-          </div>
-        </div>
-      </div>
-    @empty
-      <div class="text-sm text-slate-500">No hay fases registradas.</div>
-    @endforelse
+      @empty
+        <div class="text-sm text-slate-500 font-bold">No hay fases registradas.</div>
+      @endforelse
+    </div>
   </div>
+</div>
 
-  <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
-    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+<div x-show="tab==='tareas'" x-transition>
+  <div class="vs-card">
+    <div class="vs-card-head">
       <div>
-        <h2 class="text-base font-extrabold text-slate-900">Tareas del Proyecto</h2>
-        <p class="text-sm text-slate-500 mt-1">Seguimiento operativo</p>
+        <div class="vs-card-title">Tareas del proyecto</div>
+        <div class="vs-card-sub">Seguimiento operativo.</div>
       </div>
 
       @if(isset($usuarios) && isset($nameField))
       <details class="group">
-        <summary class="list-none cursor-pointer inline-flex items-center justify-center rounded-xl px-4 h-11 text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm">
-          + Agregar tarea
+        <summary class="list-none cursor-pointer vs-btn vs-btn-primary">
+          {!! $icon('plus') !!} Agregar tarea
         </summary>
 
-        <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <div class="form-mini">
           <form method="POST" action="{{ route('admin.proyectos.tareas.store') }}">
             @csrf
             <input type="hidden" name="proyecto_id" value="{{ $proyecto->id }}">
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-              <input type="text" name="nombre" placeholder="Nombre de la tarea"
-                class="h-11 rounded-xl border border-slate-300 px-3">
+              <input type="text" name="nombre" placeholder="Nombre de la tarea" class="input-vs">
 
-              <select name="fase_id" class="h-11 rounded-xl border border-slate-300 px-3">
+              <select name="fase_id" class="select-vs">
                 <option value="">Sin fase</option>
                 @foreach($proyecto->fases as $fase)
                   <option value="{{ $fase->id }}">{{ $fase->nombre }}</option>
                 @endforeach
               </select>
 
-              <select name="responsable_id" class="h-11 rounded-xl border border-slate-300 px-3">
+              <select name="responsable_id" class="select-vs">
                 <option value="">Sin responsable</option>
                 @foreach($usuarios as $u)
                   <option value="{{ $u->id }}">{{ $u->{$nameField} ?? ('Usuario #' . $u->id) }}</option>
                 @endforeach
               </select>
 
-              <select name="estado" class="h-11 rounded-xl border border-slate-300 px-3">
+              <select name="estado" class="select-vs">
                 <option value="pendiente">Pendiente</option>
                 <option value="en_proceso">En proceso</option>
                 <option value="finalizada">Finalizada</option>
                 <option value="pausada">Pausada</option>
               </select>
 
-              <input type="date" name="fecha_inicio" class="h-11 rounded-xl border border-slate-300 px-3">
-              <input type="date" name="fecha_fin" class="h-11 rounded-xl border border-slate-300 px-3">
-              <input type="number" step="0.01" name="porcentaje" placeholder="% avance"
-                class="h-11 rounded-xl border border-slate-300 px-3">
+              <input type="date" name="fecha_inicio" class="input-vs">
+              <input type="date" name="fecha_fin" class="input-vs">
+              <input type="text" inputmode="decimal" name="porcentaje" placeholder="% avance" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" class="input-vs">
 
-              <button class="bg-indigo-600 text-white rounded-xl h-11 font-semibold px-4">
-                Guardar tarea
-              </button>
+              <button class="vs-btn vs-btn-primary">Guardar tarea</button>
             </div>
 
             <div class="mt-3">
-              <textarea name="descripcion" rows="3" placeholder="Descripción de la tarea"
-                class="w-full rounded-xl border border-slate-300 px-3 py-3"></textarea>
+              <textarea name="descripcion" rows="3" placeholder="Descripción de la tarea" class="textarea-vs"></textarea>
             </div>
           </form>
         </div>
@@ -668,134 +767,129 @@
       @endif
     </div>
 
-    @forelse($proyecto->tareas ?? [] as $tarea)
-      @php
-        $estadoT = (string)($tarea->estado ?? '');
-        $porcentajeT = max(0, min(100, (float)($tarea->porcentaje ?? 0)));
+    <div class="vs-card-body">
+      @forelse($proyecto->tareas ?? [] as $tarea)
+        @php
+          $estadoT = (string)($tarea->estado ?? '');
+          $porcentajeT = max(0, min(100, (float)($tarea->porcentaje ?? 0)));
 
-        $responsableT = $tarea->responsable->name
-          ?? $tarea->responsable->nombre
-          ?? $tarea->responsable->nombre_completo
-          ?? '—';
+          $responsableT = $tarea->responsable->name
+            ?? $tarea->responsable->nombre
+            ?? $tarea->responsable->nombre_completo
+            ?? '—';
 
-        $colorBarraT = match($estadoT) {
-          'finalizada' => 'from-emerald-500 to-emerald-600',
-          'en_proceso' => 'from-indigo-500 to-indigo-700',
-          'pausada'    => 'from-amber-400 to-amber-500',
-          default      => 'from-slate-400 to-slate-500',
-        };
+          $colorBarraT = match($estadoT) {
+            'finalizada' => 'from-emerald-500 to-emerald-600',
+            'en_proceso' => 'from-indigo-500 to-indigo-700',
+            'pausada'    => 'from-amber-400 to-amber-500',
+            default      => 'from-slate-400 to-slate-500',
+          };
 
-        $colorChipT = match($estadoT) {
-          'finalizada' => 'bg-emerald-500 text-white',
-          'en_proceso' => 'bg-indigo-500 text-white',
-          'pausada'    => 'bg-amber-400 text-white',
-          default      => 'bg-slate-500 text-white',
-        };
+          $colorChipT = match($estadoT) {
+            'finalizada' => 'bg-emerald-500 text-white',
+            'en_proceso' => 'bg-indigo-500 text-white',
+            'pausada'    => 'bg-amber-400 text-white',
+            default      => 'bg-slate-500 text-white',
+          };
 
-        $hoy = now()->startOfDay();
-        $fechaFinT = $tarea->fecha_fin ? \Illuminate\Support\Carbon::parse($tarea->fecha_fin)->startOfDay() : null;
+          $hoy = now()->startOfDay();
+          $fechaFinT = $tarea->fecha_fin ? \Illuminate\Support\Carbon::parse($tarea->fecha_fin)->startOfDay() : null;
 
-        $vencida = $fechaFinT && $fechaFinT->lt($hoy) && $estadoT !== 'finalizada';
-        $sinResponsable = empty($tarea->responsable_id);
+          $vencida = $fechaFinT && $fechaFinT->lt($hoy) && $estadoT !== 'finalizada';
+          $sinResponsable = empty($tarea->responsable_id);
 
-        $alertColor = $vencida
-          ? 'border-red-300 bg-red-50'
-          : ($sinResponsable ? 'border-amber-300 bg-amber-50' : 'border-slate-200 bg-white');
-      @endphp
+          $alertClass = $vencida
+            ? 'border-red-300 bg-red-50'
+            : ($sinResponsable ? 'border-amber-300 bg-amber-50' : 'border-slate-200 bg-white');
+        @endphp
 
-      <div class="border {{ $alertColor }} rounded-2xl p-4 mb-4 last:mb-0">
-        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+        <div class="item-card {{ $alertClass }}">
+          <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+            <div class="min-w-0">
+              <div class="font-black text-slate-900">{{ $tarea->nombre }}</div>
 
-          <div class="min-w-0">
-            <div class="font-bold text-slate-900">{{ $tarea->nombre }}</div>
+              <div class="flex gap-2 mt-2 flex-wrap">
+                @if($vencida)
+                  <span class="vs-badge vs-badge-danger">Vencida</span>
+                @endif
 
-            <div class="flex gap-2 mt-2 flex-wrap">
-              @if($vencida)
-                <span class="text-xs px-2 py-1 rounded bg-red-600 text-white font-bold">
-                  Vencida
-                </span>
-              @endif
+                @if($sinResponsable)
+                  <span class="vs-badge vs-badge-warn">Sin responsable</span>
+                @endif
 
-              @if($sinResponsable)
-                <span class="text-xs px-2 py-1 rounded bg-amber-500 text-white font-bold">
-                  Sin responsable
-                </span>
-              @endif
-
-              @if($estadoT === 'finalizada')
-                <span class="text-xs px-2 py-1 rounded bg-emerald-600 text-white font-bold">
-                  Completada
-                </span>
-              @endif
-            </div>
-
-            <div class="text-sm text-slate-500 mt-2">
-              Fase: {{ $tarea->fase->nombre ?? 'Sin fase' }} · Responsable: {{ $responsableT }}
-            </div>
-
-            @if(!empty($tarea->descripcion))
-              <div class="mt-3 text-sm text-slate-600">
-                {{ $tarea->descripcion }}
+                @if($estadoT === 'finalizada')
+                  <span class="vs-badge vs-badge-ok">Completada</span>
+                @endif
               </div>
-            @endif
 
-            <div class="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">
-              <div>Inicio: {{ $tarea->fecha_inicio?->format('Y-m-d') ?? '—' }}</div>
-              <div>Fin: {{ $tarea->fecha_fin?->format('Y-m-d') ?? '—' }}</div>
+              <div class="text-sm text-slate-500 mt-2 font-bold">
+                Fase: {{ $tarea->fase->nombre ?? 'Sin fase' }} · Responsable: {{ $responsableT }}
+              </div>
+
+              @if(!empty($tarea->descripcion))
+                <div class="mt-3 text-sm text-slate-600">{{ $tarea->descripcion }}</div>
+              @endif
+
+              <div class="mt-3 flex flex-wrap gap-4 text-xs text-slate-500 font-bold">
+                <div>Inicio: {{ $tarea->fecha_inicio?->format('Y-m-d') ?? '—' }}</div>
+                <div>Fin: {{ $tarea->fecha_fin?->format('Y-m-d') ?? '—' }}</div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 lg:justify-end">
+              <form method="POST" action="{{ route('admin.proyectos.tareas.update') }}" class="flex flex-wrap items-center gap-2">
+                @csrf
+                <input type="hidden" name="id" value="{{ $tarea->id }}">
+
+                <input type="text" inputmode="decimal" name="porcentaje" value="{{ number_format($porcentajeT, 2, '.', '') }}" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" class="input-vs" style="width:90px;">
+
+                <select name="estado" class="select-vs" style="width:145px;">
+                  <option value="pendiente" @selected($estadoT=='pendiente')>Pendiente</option>
+                  <option value="en_proceso" @selected($estadoT=='en_proceso')>En proceso</option>
+                  <option value="finalizada" @selected($estadoT=='finalizada')>Finalizada</option>
+                  <option value="pausada" @selected($estadoT=='pausada')>Pausada</option>
+                </select>
+
+                <button class="vs-btn vs-btn-primary">Guardar</button>
+              </form>
+
+              <a href="{{ route('admin.proyectos.tareas.edit', $tarea->id) }}" title="Editar tarea" class="action-btn hover:text-indigo-600">
+                {!! $icon('edit') !!}
+              </a>
+
+              <form method="POST" action="{{ route('admin.proyectos.tareas.destroy', $tarea->id) }}" onsubmit="return confirm('¿Seguro que deseas eliminar esta tarea?');">
+                @csrf
+                @method('DELETE')
+
+                <button type="submit" title="Eliminar tarea" class="action-btn hover:text-rose-600">
+                  {!! $icon('trash') !!}
+                </button>
+              </form>
             </div>
           </div>
 
-          <div class="flex flex-wrap items-center gap-2 lg:justify-end">
-            <form method="POST" action="{{ route('admin.proyectos.tareas.update') }}"
-                  class="flex flex-wrap items-center gap-2">
-              @csrf
-              <input type="hidden" name="id" value="{{ $tarea->id }}">
+          <div class="mt-3">
+            <div class="flex justify-between text-sm font-bold text-slate-700">
+              <span>Avance</span>
+              <span class="{{ $colorChipT }} px-2 py-0.5 rounded text-xs font-bold">
+                {{ number_format($porcentajeT, 0) }}%
+              </span>
+            </div>
 
-              <input type="number"
-                     step="0.01"
-                     name="porcentaje"
-                     value="{{ $porcentajeT }}"
-                     class="w-24 h-10 rounded-lg border border-slate-300 px-2 text-sm">
-
-              <select name="estado"
-                      class="h-10 rounded-lg border border-slate-300 px-2 text-sm">
-                <option value="pendiente" @selected($estadoT=='pendiente')>Pendiente</option>
-                <option value="en_proceso" @selected($estadoT=='en_proceso')>En proceso</option>
-                <option value="finalizada" @selected($estadoT=='finalizada')>Finalizada</option>
-                <option value="pausada" @selected($estadoT=='pausada')>Pausada</option>
-              </select>
-
-              <button class="inline-flex items-center justify-center h-10 px-3 rounded-lg bg-indigo-600 text-white text-sm font-semibold">
-                Guardar
-              </button>
-            </form>
-
-            <a href="{{ route('admin.proyectos.tareas.edit', $tarea->id) }}"
-               class="inline-flex items-center justify-center h-10 px-3 rounded-lg bg-white border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50">
-              Editar
-            </a>
-          </div>
-        </div>
-
-        <div class="mt-3">
-          <div class="flex justify-between text-sm font-semibold text-slate-700">
-            <span>Avance</span>
-            <span class="{{ $colorChipT }} px-2 py-0.5 rounded text-xs font-bold">
-              {{ number_format($porcentajeT, 0) }}%
-            </span>
-          </div>
-
-          <div class="w-full bg-slate-200 rounded-full h-3 mt-2 overflow-hidden shadow-inner">
-            <div class="bg-gradient-to-r {{ $colorBarraT }} h-3 rounded-full transition-all duration-500 ease-out"
-                 style="width: {{ $porcentajeT }}%;">
+            <div class="progress-bg h-3 mt-2 shadow-inner">
+              <div class="bg-gradient-to-r {{ $colorBarraT }} h-3 rounded-full transition-all duration-500 ease-out"
+                   style="width: {{ $porcentajeT }}%;"></div>
             </div>
           </div>
         </div>
-      </div>
-    @empty
-      <div class="text-sm text-slate-500">No hay tareas registradas.</div>
-    @endforelse
+      @empty
+        <div class="text-sm text-slate-500 font-bold">No hay tareas registradas.</div>
+      @endforelse
+
+    </div>
   </div>
 
 </div>
+
+
 @endsection

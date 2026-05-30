@@ -45,34 +45,23 @@ class CuentaPorCobrarController extends Controller
             ->findOrFail($cuentaId);
     }
 
-   public function index()
-{
-    $empresaId = $this->empresaIdOrAbort();
+    public function index()
+    {
+        $empresaId = $this->empresaIdOrAbort();
 
-    $baseQuery = CuentaPorCobrar::with(['proyecto', 'cobros.user'])
-        ->whereHas('proyecto', function ($q) use ($empresaId) {
-            $q->where('empresa_id', $empresaId);
-        });
+        $cuentas = CuentaPorCobrar::with(['proyecto', 'cobros.user'])
+            ->whereHas('proyecto', function ($q) use ($empresaId) {
+                $q->where('empresa_id', $empresaId);
+            })
+            ->latest('id')
+            ->get();
 
-    // KPI
-    $cuentasResumen = (clone $baseQuery)->get();
+        $proyectos = Proyecto::where('empresa_id', $empresaId)
+            ->orderBy('nombre')
+            ->get();
 
-    // TABLA
-    $cuentas = $baseQuery
-        ->latest('id')
-        ->paginate(15)
-        ->withQueryString();
-
-    $proyectos = Proyecto::where('empresa_id', $empresaId)
-        ->orderBy('nombre')
-        ->get();
-
-    return view('admin.cobros.index', compact(
-        'cuentas',
-        'cuentasResumen',
-        'proyectos'
-    ));
-}
+        return view('admin.cobros.index', compact('cuentas', 'proyectos'));
+    }
 
     public function store(Request $request)
     {
