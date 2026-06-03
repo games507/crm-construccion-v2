@@ -89,6 +89,10 @@ class EmpresasController extends Controller
             'activo'        => ['nullable'],
             'admin_user_id' => ['nullable', 'integer', 'exists:users,id'],
             'logo'          => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
+            'plan'             => ['nullable','string','max:30'],
+'licencia_estado'  => ['nullable','string','max:30'],
+'licencia_vence'   => ['nullable','date'],
+'usuarios_limite'  => ['nullable','integer','min:1'],
         ]);
 
         $data['activa'] = $r->boolean('activa');
@@ -138,10 +142,17 @@ class EmpresasController extends Controller
             'admin_user_id' => ['nullable', 'integer', 'exists:users,id'],
             'logo'          => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
             'remove_logo'   => ['nullable'],
+            'plan'             => ['nullable','string','max:30'],
+'licencia_estado'  => ['nullable','string','max:30'],
+'licencia_vence'   => ['nullable','date'],
+'usuarios_limite'  => ['nullable','integer','min:1'],
         ]);
 
         $data['activa'] = $r->boolean('activa');
         $data['activo'] = $r->boolean('activo', true);
+        $data['plan'] = $data['plan'] ?? 'basico';
+$data['licencia_estado'] = $data['licencia_estado'] ?? 'activa';
+$data['usuarios_limite'] = $data['usuarios_limite'] ?? 5;
 
         // Quitar logo
         if ($r->boolean('remove_logo') && $empresa->logo_path) {

@@ -68,3 +68,41 @@ The Laravel framework is open-sourced software licensed under the [MIT license](
 
 ALTER TABLE proyectos
 ADD COLUMN porcentaje DECIMAL(5,2) NOT NULL DEFAULT 0 AFTER presupuesto;
+
+
+## Hoy es 30 de mayo y es lo que le falta al sistema
+
+1. Empresas premium + licencias
+2. Auditoría / bitácora
+3. Reportes PDF ejecutivos
+4. Notificaciones por eventos
+5. Gráficos finales del dashboard
+6. Dark mode
+7. Web comercial + registro de marca
+
+
+Lo que falta para cerrar producto
+
+1. Multiempresa comercial
+Empresas con ADN VerticeSoft, planes/licencias, límite de usuarios por empresa, estado de suscripción y fecha de vencimiento.
+
+2. Reportes ejecutivos
+PDFs bonitos por proyecto, finanzas, inventario, cuentas por pagar/cobrar, todos con logo, usuario que genera, fecha y firma.
+
+3. Auditoría
+Bitácora de acciones: quién creó, editó, eliminó, pagó, recibió inventario o cambió permisos. Esto es clave para vender a empresas.
+
+4. Backup y seguridad
+Botón/proceso de respaldo de base de datos, control de sesiones, roles bien cerrados, logs de errores y política de permisos.
+
+5. Notificaciones completas
+No solo campana: avisos por tareas vencidas, cuentas vencidas, stock bajo, órdenes pendientes, pagos registrados.
+
+6. Inventario más cerrado
+Materiales, existencias, movimientos, kardex y almacenes ya van bien; faltaría stock mínimo, alertas, recepción desde orden de compra y reporte de valoración.
+
+7. Finanzas más comercial
+CxP y CxC están muy bien visualmente; faltaría ingresos/gastos generales, flujo de caja, bancos/caja chica y reportes mensuales.
+
+8. Documentación
+Manual de usuario, manual técnico, video demo, presentación comercial y página web de ventas.

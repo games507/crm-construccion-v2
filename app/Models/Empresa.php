@@ -23,12 +23,18 @@ class Empresa extends Model
         'activo',
         'logo_path',
         'admin_user_id',
+        'plan',
+'licencia_estado',
+'licencia_vence',
+'usuarios_limite',
     ];
 
-    protected $casts = [
-        'activa' => 'boolean',
-        'activo' => 'boolean',
-    ];
+   protected $casts = [
+    'activa' => 'boolean',
+    'activo' => 'boolean',
+    'licencia_vence' => 'date',
+    'usuarios_limite' => 'integer',
+];
 
     /**
      * Usuario administrador asignado

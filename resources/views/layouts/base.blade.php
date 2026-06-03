@@ -190,17 +190,35 @@
   }
 @endphp
 
-<div class="h-screen w-full flex overflow-hidden">
+<div class="min-h-screen w-full lg:flex">
 
   @auth
     @include('partials.sidebar')
   @endauth
 
-  <main class="flex-1 min-w-0 min-h-0 flex flex-col">
+  <main class="flex-1 min-w-0 min-h-screen flex flex-col">
 
-    <header class="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-slate-200 shadow-sm">
+  <header class="sticky top-0 z-30   bg-white/90 backdrop-blur-xl border-b border-slate-200 shadow-sm">  
       <div class="h-16 px-4 lg:px-6 flex items-center justify-between gap-3 min-w-0">
+<div class="lg:hidden flex items-center gap-3 px-4 py-2 border-b border-slate-200 bg-white">
 
+    <img
+        src="{{ asset('img/logo.png') }}"
+        alt="VerticeSoft"
+        class="h-10 w-auto object-contain"
+    >
+
+    <div>
+        <div class="font-black text-slate-900">
+            VerticeSoft
+        </div>
+
+        <div class="text-xs text-slate-500 font-semibold">
+            ERP Multiempresa
+        </div>
+    </div>
+
+</div>
         <div class="text-sm text-slate-600 truncate min-w-0 font-semibold">
           @yield('breadcrumb','Panel / ' . trim($__env->yieldContent('title','Dashboard')))
         </div>
